@@ -1,0 +1,47 @@
+Language comparison,Effect,Measure,Study,Tonal $n$,Comparison $N$
+Mandarin vs. English ,$+$,Melodic discrimination,Alexander et al. (2008),14,14
+,$+$,Melodic comparison,Bradley (2016),26,26
+,$+$,Contour discrimination,Creel et al. (2018),133,53
+,$+$,Pitch discrimination,Giuliano et al. (2011),17,16
+,$-$,Melodic identification,Alexander et al. (2008),14,14
+,$-$,Nonspeech pitch contour identification,Bent et al. (2006),13,12
+,$-$,Melodic tone discrimination,Chang et al. (2016),17,38
+,$\varnothing$,Nonspeech pitch discrimination,Bent et al. (2006),13,12
+,$\varnothing$,F0 discrimination,Bidelman et al. (2011),11,22
+,$\varnothing$,Chordal detuning discrimination,Bidelman et al. (2011),11,22
+,$\varnothing$,Melodic tone identification,Chang et al. (2016),17,38
+,$\varnothing$,Timbre discrimination,Creel et al. (2018),133,53
+,$\varnothing$,Interval discrimination,Giuliano et al. (2011),17,16
+,$\varnothing$,Melody comparison,Zheng \& Samuel (2018),60,60
+,$\varnothing$,Pitch precision,Zheng \& Samuel (2018),60,60
+Mandarin or Cantonese (mostly) vs English (mostly),$+$,Melody test,Swaminathan et al (2021),107,409
+,$\varnothing$,Rhythm test,Swaminathan et al (2021),107,409
+"Mandarin, Cantonese, or Vietnamese vs. English",$+$,Interval discrimination,Pfordresher \& Brown (2009),12,12
+,$\varnothing$,Note discrimination,Pfordresher \& Brown (2009),12,12
+Mandarin vs. English or Portuguese,$+$,Interval discrimination,Pfordresher \& Brown (2009),11,11
+,$\varnothing$,Note discrimination,Pfordresher \& Brown (2009),11,11
+Mandarin vs. English or Korean,$-$,Melody comparison,Zheng \& Samuel (2018),48,96
+,$\varnothing$,Pitch precision,Zheng \& Samuel (2018),48,96
+Mandarin vs. Dutch,$+$,Montreal Battery of Evaluation of Amusia,Chen et al. (2016),42,42
+,$+$,Musical Ear Test,Chen et al. (2016),42,42
+Mandarin vs. Japanese,$+$,Melody discrimination,Zhang et al. (2020),31,28
+,$-$,Rhythm discrimination,Zhang et al. (2020),31,28
+"Mandarin, Cantonese, or Vietnamese vs. Unspecified (mostly French)",$-$,Pitch change detection,Peretz et al. (2011),14,25
+,$\varnothing$,Montreal Battery of Evaluation of Amusia ,Peretz et al. (2011),14,25
+Cantonese vs. English,$+$,F0 difference limens,Bidelman et al. (2013),18,36
+,$+$,Pitch processing speed,Bidelman et al. (2013),18,36
+,$+$,Pitch memory,Bidelman et al. (2013),18,36
+,$+$,Melody discrimination,Bidelman et al. (2013),18,36
+,$+$,F0 DL task,Hutka et al. (2015),18,42
+,$\varnothing$,Pitch height discrimination task,Tong et al. (2018),30,30
+,$\varnothing$,Pitch interval discrimination task,Tong et al. (2018),30,30
+,$\varnothing$,Mistuning detection,Wong et al. (2012),22,26
+,$\varnothing$,Off-beat detection,Wong et al. (2012),22,26
+Cantonese vs. English or French,$+$,Out-of-key detection,Wong et al. (2012),408,154
+,$\varnothing$,Off-beat detection,Wong et al. (2012),408,154
+,$\varnothing$,Mistuned detection,Wong et al. (2012),408,154
+Vietnamese vs. English ,$+$,Montreal Battery of Evaluation of Amusia,Ngo et al. (2016),16,16
+,$\varnothing$,Cochran-Weiss-Shanteau index of expertise,Ngo et al. (2016),16,16
+Thai vs. English,$\varnothing$,Interval discrimination,Stevens et al. (2013),24,24
+,$\varnothing$,Frequency discrimination,Stevens et al. (2013),24,24
+Yoruba vs. English ,$+$,Melodic comparison,Bradley (2016),15,26
