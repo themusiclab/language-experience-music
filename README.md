@@ -1,10 +1,8 @@
 # Language experience shapes music processing across 40 tonal, pitch-accented, and non-tonal languages 
 
-This repository contains data and code for xx. You can find the preprint at xx. The pre-registration is available at https://osf.io/xurdb. 
+This repository contains data and code for Liu, Hilton, Bergelson, & Mehr (2021). You can find the preprint at xx. The pre-registration is available at https://osf.io/xurdb. 
 
 ## Anatomy of the repo
-
-`/writing` contains the manuscript and relevant files:
 
 - `tonelang.Rmd` contains the manuscript and all analyses. It also contains the code (commented out at the beginning) that generates the post-exclusion data, one-to-one matched data, and inverse probability weighted data from the pre-exclusion data. These generated datasets are read in directly into the manuscript from  `/data` due to the time and memory it takes for them to be generated.
 - `tonelang_table1.csv`: Table 1 in the manuscript
@@ -19,4 +17,4 @@ This repository contains data and code for xx. You can find the preprint at xx. 
 
 ## Asistance
 
-if you have any questions, or need help with any of the data, code, or material associated, please contact Jingxuan Liu (jingxuan.liu@duke.edu) and/or Samuel Mehr (sam@wjh.harvard.edu).
+if you have any questions, or need help with any of the data, code, or material associated, please contact Jingxuan Liu (jingxuan.liu@duke.edu), Courtney Hilton (courtneyhilton@g.harvard.edu), and/or Samuel Mehr (sam@wjh.harvard.edu).
