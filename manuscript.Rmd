@@ -1,0 +1,1367 @@
+---
+header-includes:
+- \usepackage[left]{lineno}
+- \usepackage{mdframed}
+- \usepackage{soul}
+- \usepackage{xcolor}
+- \definecolor{bleu}{HTML}{2200cc}
+- \usepackage{caption}
+- \usepackage{ragged2e}
+- \usepackage{afterpage}
+- \usepackage[labelformat = empty]{caption}
+output: 
+  pdf_document:
+    fig_caption: yes
+    number_sections: true
+    latex_engine: xelatex
+csl: apa.csl
+bibliography: "themusiclab.bib"
+nocite: "@Bailey1988; @vanderHulst2010; @Inkelas1988; @Chen2016; Ngo2016; @Swaminathan2021"
+urlcolor: bleu
+linkcolor: bleu
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message = FALSE)
+options(scipen = 999)
+
+# Note: producing all the matched and inverse-probability weighted datasets
+# takes a long time for the computations to run, so this rmd only runs
+# presaved outputs. But if you want to run these analysis steps
+# set full_run below to TRUE
+
+full_run <- FALSE
+if (full_run) {
+  source(here("analysis", "subsampling.R"))
+}
+
+```
+
+```{r load-library}
+
+library(pacman)
+p_load(broom,
+       knitr,
+       ggridges,
+       ggtext,
+       scales,
+       lmerTest,
+       broom.mixed,
+       patchwork,
+       gghighlight,
+       kableExtra,
+       ggrepel,
+       jtools, 
+       here,
+       tidyverse,
+       survey,
+       ggeffects,
+       emmeans)
+
+color_scheme <- c("#85C0F9", "#A95AA1", "#F5793A")
+
+```
+
+```{r load-data}
+users_full <- 1993012 # hard coded due to large data file 
+users <- 716855
+explore_n <- 297600
+confirm_n <- 404306
+
+miq_confirm_filtered <- read.csv(here("data", "Confirmatory", "Confirm_filtered.csv"))
+miq_confirm_matched <- read.csv(here("data", "Confirmatory","Confirm_matched.csv"))
+miq_confirm <- read.csv(here("data", "Confirmatory", "Confirm_full.csv"))
+
+miq_explore_filtered <- read.csv(here("data", "Exploratory", "Explore_filtered.csv"))
+miq_explore_matched <- read.csv(here("data", "Exploratory", "Explore_matched.csv"))
+miq_explore <- read.csv(here("data", "Exploratory", "Explore_full.csv"))
+
+languages <- read.csv(here("data", "language.csv"))
+
+headphone_score <- read.csv(here("data", "headphone_score.csv"))
+
+load(here("data/Confirmatory", "ipw_confirm.RData"))
+
+Confirm_sim <- read.csv(here("data","Confirm_sim.csv"))
+```
+
+```{r Confirmatory-Regressions}
+### Confirmatory
+
+# Total/main analysis
+mdt.total <- lm(mdt ~ Tone + musicLessons + age + gender, data = miq_confirm_filtered)
+mpt.total <- lm(mpt ~ Tone + musicLessons + age + gender, data = miq_confirm_filtered)
+cabat.total <- lm(cabat ~ Tone + musicLessons + age + gender, data = miq_confirm_filtered)
+
+#total without lessons, used in Figure
+mdt.nolesson <- lm(mdt ~ Tone + age + gender, data = miq_confirm_filtered %>% filter(musicLessons == "No"))
+mpt.nolesson <- lm(mpt ~ Tone + age + gender, data = miq_confirm_filtered %>% filter(musicLessons == "No"))
+cabat.nolesson <- lm(cabat ~ Tone + age + gender, data = miq_confirm_filtered %>% filter(musicLessons == "No"))
+
+# matched
+mdt.matched <- lm(mdt ~ Tone, data = miq_confirm_matched)
+mpt.matched <- lm(mpt ~ Tone, data = miq_confirm_matched)
+cabat.matched <- lm(cabat ~ Tone, data = miq_confirm_matched)
+
+# matched without lessons
+mdt.nl.matched <- lm(mdt ~ Tone, data = miq_confirm_matched %>% filter(musicLessons == "No")) 
+mpt.nl.matched <- lm(mpt ~ Tone, data = miq_confirm_matched %>% filter(musicLessons == "No"))
+cabat.nl.matched <- lm(cabat ~ Tone, data = miq_confirm_matched %>% filter(musicLessons == "No"))
+
+#ipw
+design <- svydesign(ids = ~1, weights = data_weighted$weights,
+                     data = miq_confirm_filtered)
+mdt.ipw  <- svyglm(mdt ~ Tone, design = design, family = "gaussian")
+mpt.ipw  <- svyglm(mpt ~ Tone, design = design, family = "gaussian")
+cabat.ipw  <- svyglm(cabat ~ Tone, design = design, family = "gaussian")
+```
+
+\raggedright
+\LARGE 
+\textbf{Language experience shapes music processing across 40 tonal, pitch-accented, and non-tonal languages}
+
+\vspace{0.2in}
+
+\justifying
+\normalsize
+Jingxuan Liu$^{1,2}$, Courtney B. Hilton$^{2}$, Elika Bergelson$^{1}$, & Samuel A. Mehr$^{2,3,4,\ast}$
+
+\small
+
+$^{1}$Department of Psychology \& Neuroscience, Duke University, Durham, NC 27708, USA \
+$^{2}$Department of Psychology, Harvard University, Cambridge, MA 02138, USA \
+$^{3}$Data Science Initiative, Harvard University, Cambridge, MA 02138, USA \
+$^{4}$School of Psychology, Victoria University of Wellington, Wellington 6012, New Zealand \
+
+\*Corresponding author. E-mail: [sam\@wjh.harvard.edu](mailto:sam@wjh.harvard.edu){.email} 
+
+\bigskip
+\normalsize
+
+```{=tex}
+\begin{mdframed}[backgroundcolor=gray!20]
+Tonal languages differ from other languages in their use of pitch (tones) to distinguish words. Some research suggests that the \textit{linguistic} pitch expertise of tonal language speakers may generalize to improved discrimination of some aspects of \textit{musical} pitch: tonal language speakers may therefore have music perception advantages over speakers of other languages. The evidence is mixed, however, as prior studies have studied small numbers of participants in only a few tonal languages and countries, making it challenging to disentangle the effects of linguistic experience from variability in music training experience, cultural differences, and so on. Here, we report an assessment of music perception skill in native speakers of 40 languages, with a preregistered exploratory-confirmatory design, including tonal (e.g., Mandarin, Vietnamese), pitch-accented (e.g., Japanese, Croatian), and non-tonal (e.g., Spanish, Hungarian) languages. Whether or not participants had taken music lessons, native speakers of tonal languages (confirmatory $n = $ 20,102) had an improved ability to discriminate musical melodies. But this improvement came with a trade-off: relative to speakers of pitch-accented (confirmatory $n = $ 9,694) or non-tonal languages (confirmatory $n = $ 242,096), tonal speakers were worse at discriminating fine-scale pitch-tuning and worse at processing the musical beat. These results, which held across 5 tonal languages and were robust to geographic and demographic variation, demonstrate that linguistic experience shapes music perception ability, with implications for relations between music, language, and culture in the human mind.
+\end{mdframed}
+```
+
+\linenumbers
+
+# Introduction
+
+From infancy and early childhood, we are surrounded by people speaking [@Bergelson2019; @Eibl-Eibesfeldt1979; @Konner2010] and singing [@Mehr2019; @Mehr2020; @Bonneville-Roussy2013; @Mendoza2021; @Mehr2014; @Yan2021]. This immersion continues throughout the lifespan and is reinforced through our own language and music production. 
+
+Human perception readily adapts to these soundscapes: early speech experiences tune our hearing to the speech contrasts of our native language(s) [@Kuhl2004; @Werker1984; @Polka1994], and musical experiences during the same time period are thought to have similar "perceptual narrowing" effects, biasing listeners' interpretations of musical rhythm and pitch based on their own musical cultures [@Hannon2005; @Lynch1990]. These effects may cross domains. While music training has minimal causal effects on high-level cognitive skills [@Sala2020; @Mehr2013a], it may sharpen lower-level aspects of speech processing [@Patel2011; @Wong2007] and auditory perception [@Kraus2010]. In the opposite direction, enhanced experience with the kind of linguistic pitch used in tonal languages has been argued to shape pitch processing in music [@Bradley2016; @Bidelman2013; @Pfordresher2009]. 
+
+Here, we study the latter possibility, to examine the effects of language experience on music processing, with a focus on pitch. Languages can be classified into three distinct categories based on their use of pitch: tonal, non-tonal, and pitch-accented. While all spoken languages convey information via pitch, tonal languages, which represent over half the world's languages [including many Southeast Asian and African languages; @Yip2002] use pitch in a special fashion. In tonal languages, pitch is often used lexically: speaking the same syllable with a different pitch level or shape alters meaning at the word level [@Pike1948; @vanderHulst2011]. A canonical example is the Mandarin syllable $ma$, which has different meanings depending on its tonal contour (i.e., level, rising, falling-rising, or falling). This property requires pitch sensitivity in both speakers and listeners, lest one scold ($m\grave{a}$) one's mother ($m\bar{a}$) instead of one's horse ($m\breve{a}$).
+
+The lexical use of pitch in tonal languages is distinct from how pitch is otherwise used in speech. For example, many languages use pitch to convey affect [@Cowen2019]; to cue non-lexical meaning [e.g., helping to differentiate between questions and statements; @Patel2008; @Tong2005]; to emphasize information [@Breen2010]; to cue sentence structure with metrical stress patterns [@Wagner2019] supporting comprehension [@Hilton2021a]; and is a prominent feature of infant-directed speech [@Hilton2021b]. These many uses of pitch are typical of speech in non-tonal languages [e.g., many Indo-European, South Asian, or Australian languages; @Maddieson2013], but in these languages, pitch is never used lexically to denote word meanings. A third group, *pitch-accented* languages, is an intermediate category with limited or mixed use of lexical pitch [such as Croatian; @vanderHulst2011].^[Whether pitch-accented language form a coherent standalone category or whether they are better considered on a spectrum between tonal and non-tonal languages, with some mixed cases, is a matter of debate [e.g., @Gussenhoven2004; @Hyman2006; @Hyman2009]. Indeed, a category of languages that groups evidently disparate languages together, such as Japanese and Swedish, may not be defensible. As pitch-accented languages are not our primary focus, here we treat them as a separate group from tonal and non-tonal languages, but also conduct some  analyses at the language level rather than the language-group level. We encourage anyone interested in alternative groupings of languages to use our public data and code to re-analyze accordingly.]
+
+The special role of pitch in tonal languages has motivated the hypothesis that speaking a tonal language sharpens pitch perception in a domain-general way. Indeed, compared to speakers of non-tonal languages, native speakers of tonal languages not only better discriminate the tones of their native language and those of other tonal languages they do not speak [@Li2018; @Peng2010], but also show stronger categorical perception for non-speech pitch patterns generally [@Bent2006; @Bidelman2015]. Tonal language speakers also have distinct neural responses to pitch in brain areas associated with early auditory processing [@Bidelman2011; @Bidelman2011a].
+
+Might domain-general auditory processing advantages transfer to enhanced pitch processing in music? Many studies have tested this question by comparing native speakers of tonal and non-tonal languages on a variety of musical pitch perception tasks. The results have been mixed (Table 1). Some studies report that tonal language speakers excel at discriminating pitch patterns in the form of melodies, intervals, and contours [@Alexander2008; @Bradley2016; @Bidelman2013; @Chen2016; @Pfordresher2009; @Wong2012]; or at discerning fine-grained pitch difference either in isolation or in the context of detuned melodies [@Bidelman2013; @Chen2016; @Giuliano2011; @Hutka2015]. But other studies fail to replicate these patterns, both for melodic discrimination [@Giuliano2011; @Stevens2013; @Tong2018] and fine-scale pitch discrimination [@Bent2006; @Bidelman2011a; @Pfordresher2009; @Stevens2013; @Tong2018]. Some studies even find that tonal language speakers have *more* trouble distinguishing musical pitch contours, suggesting that lexical tone experience could interfere with pitch perception in some contexts [@Bent2006; @Chang2016;  @Peretz2011; @Zheng2018].
+
+```{r Past-study-sample}
+studies <- list()
+
+studies$samples <- c(14,14,26,26,133,53,17,16,13,12,17,38,11,22,60,60,12,12,11,11,48,96,42,42,31,28,14,25,18,36,18,42,30,30,22,26,408,154,16,16, 24,24,15,107,409)
+
+studies$median <- median(studies$samples)
+studies$iqr <- paste0(quantile(studies$samples,1/4), "-", quantile(studies$samples,3/4)) 
+studies$min <- min(studies$samples)
+```
+
+What explains these conflicting results? First, and most importantly, prior studies sample languages narrowly (i.e., typically comparing Mandarin or Cantonese speakers from mainland China to English speakers from the United States), with only a few exceptions [i.e., Yoruba speakers in @Bradley2016; Thai speakers in @Stevens2013; Dutch speakers in @Chen2016]. This, combined with generally small samples (median prior sample size per language group: $n = `r studies$median`$; interquartile range: `r studies$iqr`; minimum: $n = `r studies$min`$; see Table 1) makes it difficult to rule out confounding effects from factors such as culture and genetics [@Deutsch2006; @Hove2010] or linguistic variability [@Evans2009]. Generalization from particular speakers of specific languages to entire groups of languages (i.e., from studies of Mandarin speakers to claims concerning general effects of tonal language experience) require larger samples of both languages and participants [@Yarkoni2020; @HiltonInPress].
+
+```{r Table1, results = "asis"}
+table1 <- read.csv(here("writing", "tonelang_table1.csv"))
+
+#cat("\\clearpage") # force table 1 onto the start of its own page
+colnames(table1) <- c("Language comparison", "Effect", "Measure", "Study", "Tonal $n$", "Non-tonal $n$")
+kable(table1, 
+      booktab = T, 
+      linesep = NULL, 
+      format = "latex", 
+      longtable = TRUE, 
+      escape = F) %>%
+  kable_styling(font_size = 7.5,
+                position = "center") %>%
+  column_spec(1, width = "1.3in") %>%
+  column_spec(2, width = "0.2in") %>%
+  column_spec(3, width = "2in") %>%
+  column_spec(4, width = "1.3in") %>%
+  column_spec(5, width = "0.4in") %>%
+  column_spec(6, width = "0.4in") %>% 
+  footnote(general = "Prior studies on the effects of language experience on music processing have mixed results. Key: Tonal-language advantages indicated by $+$; disadvantages by $\\-$; null results by $\\0$.",
+           general_title = "Table 1.",
+           footnote_as_chunk = TRUE,
+           title_format = "bold",
+           escape = FALSE,
+           threeparttable = TRUE)
+
+```
+
+Second, participants' musical training experience has rarely been accounted for in prior work. At best, this contributes additional unsystematic variation within a sample, reducing statistical power; but access to musical training may also vary systematically between countries [e.g., @Campbell2012], potentially leading to biased estimates of music perception abilities. Such biases could erroneously be attributed to differences in tonal language experience, leading to contradictory findings across studies.
+
+Third, the operationalization of "musical pitch perception" and its measurement in prior studies has varied widely, ranging from holistic aspects of melody apprehension to the discrimination of fine-scale pitch differences. This has made it difficult to find consensus on a general claim concerning the relation between music perception ability and language experience. 
+
+These issues can be addressed by studying many native speakers of many languages, with and without music training experience, all of whom complete the same assessments of music processing ability. Here, we report a study of the ability to discriminate melodies, detect mistuned singing, and detect misaligned beats, in `r prettyNum(nrow(miq_explore_filtered) + nrow(miq_confirm_filtered), big.mark = ",")` people. Participants self-reported their native language, location, demographics, and degree of musical training, enabling language-wise and language-type-wise analyses of each of these musical abilities and their relations to linguistic and musical experience.
+
+# Methods
+
+## Participants
+
+Participants were visitors to the citizen-science website <https://themusiclab.org> who completed a set of three music perception tests presented as an online game (*Test Your Musical IQ*). We did not recruit participants directly; rather, they visited the site after hearing about it organically (e.g., via Reddit posts, YouTube clips, Twitch streams). All participants gave informed consent under an ethics protocol approved by the Committee on the Use of Human Subjects, Harvard University's Institutional Review Board.
+
+Of the `r prettyNum(users_full, big.mark = ",")` participants who started the experiment between Nov 8th, 2019 and Aug 21st, 2021, `r prettyNum(users, big.mark = ",")` completed the experiment. Those who participated in the first 5 months of data collection ($n$ = `r prettyNum(explore_n, big.mark = ",")`, post-exclusion $n$ = `r prettyNum(nrow(miq_explore_filtered), big.mark = ",")`) were used in an exploratory dataset, analyses of which are reported in Text S1.1; these analyses formed the basis for a preregistration of confirmatory analyses, which is available at <https://osf.io/xurdb>.^[Our preregistration noted that we would study participants whose data were collected between 28 April 2020 and 20 February 2021; we opted to include additional data collected up until the date of submission of this paper, to maximize the confirmatory sample size.] 
+
+```{r confirm-exclusion-numbers}
+miq_confirm_exclude <- miq_confirm %>%
+  mutate(ex_age = case_when(
+    age <8 | age >90 ~ 1,
+    TRUE ~ 0
+  ),
+  ex_hear = case_when(
+    hearingImp != "No" ~ 1,
+    TRUE ~ 0
+  ),
+  ex_take = case_when(
+    takenBefore == "Yes" ~ 1,
+    TRUE ~ 0
+  ),
+  ex_lessonAge = case_when(
+    lessonsAge < 2 | lessonsAge > 90 ~ 1,
+    TRUE ~ 0
+  ),
+  ex_work = case_when(
+    headphone == "No" & workspace == "I am in a very noisy place" ~ 1,
+    TRUE ~ 0
+  ),
+  age_consist = case_when(
+    age < lessonsAge ~ 1,
+    TRUE ~ 0
+  )) %>%
+  mutate(exclude_sum = ex_age + ex_hear + ex_take + ex_lessonAge + ex_work + age_consist)
+
+confirm_exclude_dups <- miq_confirm_exclude %>% # number of participants who are excluded because of more than 1 criteria
+  filter(exclude_sum >1) %>%
+  nrow(.)
+
+miq_confirm_excludeOnly <- miq_confirm_exclude %>%
+  mutate(exclude_sum = ex_age + ex_hear + ex_take + ex_lessonAge + ex_work + age_consist) %>%
+  filter(exclude_sum == 1)
+
+excludes <- miq_confirm_excludeOnly %>% 
+  summarise(across(c(ex_age:exclude_sum), sum, .names = "{.col}"))
+
+# participants who do not speak top 40 langauage
+exclude_dup_id <- miq_confirm_exclude %>% # number of participants who are excluded because of more than 1 criteria
+  filter(exclude_sum >1) %>%
+  pull(user_id)
+
+exclude_lang <- miq_confirm %>%
+  filter(!user_id %in% exclude_dup_id) %>%
+  filter(!user_id %in% miq_confirm_excludeOnly$user_id) %>%
+  filter(!language %in% languages$language)
+
+exclude_lang_detail<- exclude_lang %>% # exclude dataframe by language
+  filter(language != "{\"Q0 - What is your native language?\":\"") %>%
+  count(language)
+```
+
+The remaining `r prettyNum(confirm_n, big.mark = ",")` participants formed the confirmatory dataset. Based on preregistered exclusion criteria, we removed `r prettyNum(confirm_n - nrow(miq_confirm), big.mark = ",")` participants with missing and/or internally conflicting demographics data, resulting in `r prettyNum(nrow(miq_confirm), big.mark = ",")` participants. Of these remaining participants, we then removed those that (a) had participated in the experiment on another occasion, to avoid any effects of learning ($n$ = `r prettyNum(excludes$ex_take, big.mark = ",")`); (b) reported a hearing impairment ($n$ = `r prettyNum(excludes$ex_hear, big.mark = ",")`); (c) reported their age as below 8 years or above 90 years ($n$ = `r prettyNum(excludes$ex_age, big.mark = ",")`); (d) reported an age of music lessons onset that was either below 2 years or above 90 years ($n$ = `r excludes$ex_lessonAge`); (e) reported a music lesson onset age that was greater than their self-reported age ($n$ = `r excludes$age_consist`); (f) reported that they were participating in a noisy environment and were not wearing headphones ($n$ = `r excludes$ex_work`; see Text S1.2 for analysis of a manipulation check to test whether participants were actually wearing headphones); or (g) more than one of the above ($n$ = `r prettyNum(confirm_exclude_dups, ",")`). Finally, given our planned analyses at the language level, we also excluded participants whose native language was not among the 40 most-represented languages in the exploratory dataset to ensure statistically meaningful comparisons were licensed ($n$ = `r prettyNum(nrow(exclude_lang), big.mark = ",")` participants; or `r nrow(exclude_lang_detail)` languages with a median of `r median(exclude_lang_detail$n)` participants per excluded language).
+
+The native language of each participant was classified as *tonal*, *non-tonal*, or *pitch-accented* based on the Lyon-Albuquerque Phonological Systems Database [@Maddieson2014] and the World Atlas of Language Structures [@Maddieson2013]. Languages that are not present in either database were classified according to information from the Phonetics Information Base and Lexicon Database [@Moran2019] or other sources from the linguistics literature. No discrepancies were found across these sources; Table S1 contains information about the language classifications.
+
+The post-exclusion confirmatory dataset, which we analyze for the remainder of this paper, thus contains data from `r prettyNum(nrow(miq_confirm_filtered), big.mark = ",")`  participants, representing 40 native languages (5 tonal, 6 pitch-accented, and 29 non-tonal; see Figure 1 and Table S1 for specific languages and associated sample sizes). Demographic information is in Table S2.
+
+```{r Figure1, fig.width = 11, fig.height = 7, fig.cap = "\\textbf{Figure 1.} Sample sizes, grouped by language and language type. The font of each language's name is scaled proportionally to that language's sample size in the confirmatory dataset. Horizontal positions are jittered to improve readability."}
+
+size_dat <- miq_confirm_filtered %>%
+  count(language) %>%
+  mutate(
+    language = case_when(
+      language == "Chinese/Mandarin" ~ "Mandarin",
+      language == "Chinese/Cantonese/Yue" ~ "Cantonese",
+      language == "Chinese/Taiwanese/Min Nan/Hokkien" ~ "Hokkien",
+      TRUE ~ language
+    )
+  ) %>%
+  select(language, confirmatory = n) %>%
+  full_join(., languages %>%
+              mutate(
+                language = case_when(
+                  language == "Chinese/Mandarin" ~ "Mandarin",
+                  language == "Chinese/Cantonese/Yue" ~ "Cantonese",
+                  language == "Chinese/Taiwanese/Min Nan/Hokkien" ~ "Hokkien",
+                  TRUE ~ language
+                )
+              ))
+
+set.seed(10)
+
+ggplot(size_dat) +
+  theme_apa() +
+  geom_text_repel(
+    aes(
+      label = language,
+      x = Tone,
+      y = confirmatory,
+      color = Tone,
+      size = confirmatory
+    ),
+    min.segment.length = 999, # removing segments
+    position = position_jitter(width = 0.3)
+  ) +
+  scale_color_manual(values=color_scheme)+
+  scale_y_log10(labels = comma) +
+  scale_x_discrete(labels = c(
+    "<i style='color:#85C0F9;'>Non-tonal</i>",
+    "<i style='color:#A95AA1;'>Pitch-accented</i>",
+    "<i style='color:#F5793A;'>Tonal</i>"),
+    name = NULL) +
+  scale_size(range = c(4, 20), name = "Sample Size") +
+  theme(
+    axis.title.y = element_text(size = 20),
+    axis.text.x = element_markdown(size = 16, face = "bold"),
+    axis.text.y = element_text(size = 16),
+    legend.position = "none"
+  ) +
+  labs(y = "Sample Size", x = "Language Type", color = "Language Type")
+
+```
+
+## Stimuli
+
+Participants completed three music perception tests measuring ability in *melodic discrimination* [@Harrison2017], *mistuning perception* [@Larrouy-Maestri2019], and *beat alignment* [@Harrison2018]. 
+The melodic discrimination assesses the ability to detect differences between melodic patterns: participants listened to three transpositions of the same melodic pattern and were asked to choose the version in which one pitch interval was altered (i.e., an oddball task). The mistuning perception test assesses the ability to identify vocal mistuning: participants listened to two versions of a short musical excerpt, one of which had a vocal track that was detuned from the background music, and were asked to identify the out-of-tune version. The beat alignment test assesses the ability to detect correct synchronization between a click track and some music: participants listened to two versions of the same musical excerpt, both accompanied by a click track; one of the click tracks was misaligned by a constant proportion and participants were asked which example was correctly aligned.
+
+As in the original tests cited above, each of the subtests was presented adaptively using `psychTestR` [@Harrison2020]. To minimize the duration of the experiment, we fixed the length of each subtest at 15 trials, the minimum number of trials with acceptably low mean standard errors, according to the original test designs.
+
+## Analysis strategy
+
+The goal of our analyses was to determine whether musical abilities differ reliably as a function of native language type (i.e., tonal vs. pitch-accented vs. non-tonal). A simple comparison of scores across language types would have been confounded with the degree of musical experience sampled within each language, along with other cultural or personal factors. Instead, following our preregistration, we applied an ordinary-least-squares regression with measured potential-confounders as covariates to our full sample, modeled as $Performance \sim Language\:type + Gender + Age + Music\:lessons$, with non-tonal language, female, and no music lessons as the reference levels. 
+
+We then supplemented this model-based approach to dealing with confounding with a design-based approach: creating three additional versions of the data from the full sample, each controlling for confounding in different ways. The *exact match subsample* included participants matched 1-to-1 within each language type (tonal, pitch-accented, and non-tonal) on music lessons, gender, and age (coarsened into 10 year bins). The *no music lessons exact match subsample* further filtered the exact match subsample to only participants who had not received any music lessons. Finally, the *inverse probability weighted sample* included the total sample population, balanced on music lessons, gender, and age using inverse-probability weighting [@Austin2015; @Stuart2010]. These three subsamples were modeled with the same ordinary-least-squares regression: $Performance \sim Language\:type$ (with non-tonal language as the reference level). For brevity, and because these four different models provide robustly convergent evidence, we only report the full sample analysis in the main text; analysis details for each subsample model are reported in Text S1.3 and Tables S3 and S4a-c.
+
+Based on the exploratory analyses (Text S1.1), we expected that native speakers of tonal languages would outperform native speakers of both pitch-accented and non-tonal languages on the melodic discrimination task; but would *underperform* both other groups on both the mistuning perception and beat alignment tasks.
+
+As a final analytic note, because group-level comparisons in a very large sample risks yielding statistically significant effects of tiny size (i.e., practically non-significant), we also preregistered an inference criterion: in the main analyses, we compare the effects of language type *to the effects of having taken music lessons*. This provides a plainly interpretable benchmark: for instance, being a native speaker of a particular language type is associated with effects that will be interpreted as larger, of comparable size, or smaller than the effects of having taken music lessons.
+
+# Results
+
+The main analyses (Table 2 and Figure 2) supported the exploratory predictions. First, and most strikingly, native speakers of tonal languages had reliable advantages in melodic discrimination, of large practical significance: the effect of tonal language experience on melodic discrimination ability is nearly as large as the effect of having taken music lessons. This effect replicated across all four of our methods to control for confounding (Text S1.3, Tables S3 and S4a-c). 
+
+The tonal-language advantage in melodic discrimination traded off with other music perception abilities, however. Native speakers of tonal languages had a practically and statistically significant disadvantage in beat alignment scores, relative to the non-tonal-language group (~1/4th the effect of having taken music lessons; Figure 2), and showed small but inconsistent disadvantages in mistuning perception scores (see also Text S1.3). 
+
+Native speakers of pitch-accented languages showed a melodic discrimination advantage over non-tonal speakers, but this effect was far smaller than that of the tonal-language speakers. They performed *better* than non-tonal-language speakers on both the mistuning perception and beat alignment tests, however, consistent with a tonal-language disadvantage on these two tasks. We caution, however, that the category of pitch-accented languages is inherently more ambiguous than that of tonal languages, so we do not interpret these differences further (see also Footnote 1).
+
+```{r Table2, results='asis'}
+mdt.total.df <- tidy(mdt.total) %>% 
+  mutate(statistic = case_when(
+    p.value < 0.001 ~ paste0(round(statistic, 3), "***"),
+    TRUE ~ as.character(round(statistic,3))
+  )) %>%
+  select(-p.value) %>%
+  bind_cols(., 
+            tidy(mpt.total) %>%
+              mutate(statistic = case_when(
+    p.value < 0.001 ~ paste0(round(statistic, 3), "***"),
+    TRUE ~ as.character(round(statistic,3))
+  )) %>% select(-term, -p.value))%>%
+  bind_cols(., 
+            tidy(cabat.total) %>%
+              mutate(statistic = case_when(
+    p.value < 0.001 ~ paste0(round(statistic, 3), "***"),
+    TRUE ~ as.character(round(statistic,3))
+  )) %>% select(-term, -p.value)) %>%
+  mutate(across(where(is.numeric), ~ round(.x, digits = 3)),
+         term = case_when(
+           term == "(Intercept)" ~ "Intercept",
+           term == "TonePitch_accent" ~ "Language: Pitch-accented",
+           term == "ToneTonal" ~ "Language: Tonal",
+           term == "musicLessonsYes" ~ "Music lessons: Yes",
+           term == "age" ~ "Age",
+           term == "genderMale" ~ "Gender: Male",
+          # term == "genderOther" ~ "Gender: Other",
+           TRUE ~ term
+         )) %>% 
+  filter(term != "genderOther") 
+  
+mdt.total.df <- mdt.total.df[c(3,2,4,5,6,1),]
+mdt.total.df[1,1] <- cell_spec(mdt.total.df[1,1], bold = T)
+mdt.total.df[2,1] <- cell_spec(mdt.total.df[2,1], bold = T)
+
+  kable(mdt.total.df, format = "latex", 
+        escape = F, booktabs = T, linesep = "", longtable=T,
+        col.names = c(
+          "Term", "$\\beta$", "$SE$", "$t$", "$\\beta$", "$SE$", "$t$", "$\\beta$", "$SE$", "$t$"
+        )) %>% 
+  add_header_above(c(" ", "Melodic Discrimination" = 3, "Mistuning Perception" = 3, "Beat Alignment" = 3)) %>%
+  kable_styling(position = "center", font_size = 8) %>% 
+  footnote(general = "Regression results for each musical test in the confirmatory sample. ***$p < 0.001$. Note that an indicator variable for the gender \"Other\" was included as a predictor in the model, but is omitted from this table as it was rarely selected by participants.",
+           general_title = "Table 2.",
+           footnote_as_chunk = TRUE,
+           title_format = "bold",
+           escape = FALSE,
+           threeparttable = TRUE)
+
+```
+
+
+```{r models}
+
+mdt_mod <- mdt.total %>% tidy(conf.int = T, conf.level = .95) %>%
+  mutate(col_x = ifelse(grepl("Tone", term), 1, 0) %>% as_factor)
+
+mpt_mod <- mpt.total %>% tidy(conf.int = T, conf.level = .95) %>%
+  mutate(col_x = ifelse(grepl("Tone", term), 1, 0) %>% as_factor)
+
+cabat_mod <- cabat.total %>% tidy(conf.int = T, conf.level = .95) %>%
+  mutate(col_x = ifelse(grepl("Tone", term), 1, 0) %>% as_factor)
+
+```
+
+```{r figure2, fig.width = 10, fig.height = 4, fig.cap = "\\textbf{Figure 2.} Estimated effects of language type (tonal language: orange, pitch-accented language: purple, non for-tonal language: blue), marginalizing over the average proportions for ages and gender, and shown relative to the marginal effect of additionally having music lessons. After marginalization, for ease of interpretability, a scalar transformation was applied to the coefficients such that \"Non-tonal\" and \"No music lesson\" coefficient was equal to zero. Solid circular points indicate marginal estimates of speaking a given language, semi-transparent triangular points above indicate this effect combined with that of having music lessons. Error-bars represent 95% confidence intervals of the mean. The dotted horizontal black line indicates the baseline (y = 0)."}
+
+#################################
+# 1. Calculate marginal effects #
+#################################
+
+calculate_marginals <- function(data_x, test_x) {
+  # 1. calculate marginal effects
+  output <- ggemmeans(data_x, terms = c("Tone", "musicLessons")) %>% tibble %>% 
+  mutate(test = test_x)
+  
+  # 2. apply scalar transform for interpretability
+  scalar_adjust <- output %>% 
+    filter(x == "Non-tonal", group == "No") %>% 
+    pull(predicted)
+  
+  output <- output %>% 
+    mutate(across(where(is.numeric), ~ .x - scalar_adjust))
+  
+  return(output)
+}
+
+mdt_marginal <- calculate_marginals(mdt.total, "mdt")
+mpt_marginal <- calculate_marginals(mpt.total, "mpt")
+cabat_marginal <- calculate_marginals(cabat.total, "cabat")
+
+###############
+# 2. Plotting #
+###############
+
+test <- mdt_marginal %>% 
+  bind_rows(., mpt_marginal) %>% 
+  bind_rows(., cabat_marginal) 
+
+mdt_marginal %>% 
+  bind_rows(., mpt_marginal) %>% 
+  bind_rows(., cabat_marginal) %>% 
+  pivot_wider(names_from = group, values_from = c(predicted:conf.high)) %>% 
+  mutate(tone = factor(x, levels = c("Non-tonal", "Pitch_accent", "Tonal")),
+         test = factor(test, levels = c("mdt", "mpt", "cabat"))) %>% 
+  ggplot(.,
+         aes(x = test, y = predicted_No, color = tone)) +
+  geom_hline(aes(yintercept = 0), color = "black", alpha = 0.7, linetype = "dashed") +
+  geom_errorbar(aes(ymax = conf.high_No, ymin = conf.low_No, color = tone), position = position_dodge(.5), width = .2, key_glyph = draw_key_rect) +
+  geom_errorbar(aes(ymax = conf.high_Yes, ymin = conf.low_Yes, color = tone), position = position_dodge(.5), width = .2, alpha = .5, key_glyph = draw_key_rect) +
+  geom_point(position = position_dodge(.5), size = 2) +
+  geom_point(data = test, aes(x = test, y = predicted, shape = group), inherit.aes = FALSE, alpha = 0) +
+  scale_shape_manual(values = c(19, 17), name = "test",
+                     labels = c("Without Music Lessons", "With Music Lessons")) +
+  geom_point(aes(y = predicted_Yes), position = position_dodge(.5), size = 2, alpha = .5, pch = 17) +
+  geom_linerange(aes(ymax = predicted_Yes, ymin = predicted_No, color = tone), position = position_dodge(.5), linetype = "dashed", alpha = .5) +
+  scale_x_discrete(labels = c("Melodic Disrimination","Mistuning Perception", "Beat Alignment"), position = "top") +
+  scale_color_manual(values=color_scheme, labels = c("Non-tonal","Pitch-accented","Tonal")) +
+  guides(shape = guide_legend(override.aes = list(alpha = .8, size = 4))) +
+  theme_minimal() +
+  theme(
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank(),
+    legend.title = element_blank(),
+    axis.text.x = element_text(size = 16),
+    panel.grid.major.y = element_line(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(), 
+    legend.position = "bottom",
+    legend.text = element_text(size = 12))
+
+```
+
+```{r Figure3, fig.width=10, fig.height = 4, fig.cap="\\textbf{Figure 3.} Mean exploratory vs confirmatory scores within each individual language are highly similar, clustered around the y = x line (representing a perfect match) across the three musical tests. Each dot represents an individual language (tonal language: orange, pitch-accented language: purple, non-tonal language: blue)."}
+
+miq_confirm_filtered$set <- rep("confirm", nrow(miq_confirm_filtered))
+miq_explore_filtered$set <- rep("confirm", nrow(miq_explore_filtered))
+
+confirm_mean <- miq_confirm_filtered %>%
+  group_by(language) %>%
+  summarise(conf.mdt.mean = mean(mdt),
+            conf.mpt.mean = mean(mpt),
+            conf.cabat.mean = mean(cabat))
+
+explore_mean <- miq_explore_filtered %>%
+  group_by(language) %>%
+  summarise(ex.mdt.mean = mean(mdt),
+            ex.mpt.mean = mean(mpt),
+            ex.cabat.mean = mean(cabat))
+
+full_mean <- full_join(explore_mean, confirm_mean, by = "language")
+
+full_mean <- full_join(full_mean,languages %>%
+  select(language, Tone))
+
+lang_mean <- full_join(full_mean %>%
+  pivot_longer(cols = ex.mdt.mean:ex.cabat.mean, values_to = "exploratory_score", names_to = "trial") %>%
+  select(language, exploratory_score, trial) %>%
+  mutate(trial = case_when(
+    trial == "ex.mdt.mean" ~ "melodic discrimination",
+    trial == "ex.cabat.mean" ~ "beat alignment",
+    trial == "ex.mpt.mean" ~ "mistuning perception"
+  )), full_mean %>%
+  pivot_longer(cols = conf.mdt.mean:conf.cabat.mean, values_to = "confirmatory_score", names_to = "trial") %>%
+  select(language, confirmatory_score, trial) %>%
+  mutate(trial = case_when(
+    trial == "conf.mdt.mean" ~ "melodic discrimination",
+    trial == "conf.cabat.mean" ~ "beat alignment",
+    trial == "conf.mpt.mean" ~ "mistuning perception"
+  )), by = c("language", "trial"))
+
+lang_mean<- full_join(lang_mean, languages %>%
+            select(language, Tone), by = "language")
+
+plot <- ggplot(lang_mean %>% mutate(trial = str_to_title(trial))) +
+  geom_abline(intercept = 0, slope = 1, alpha = 1, size = .3) +
+  geom_point(aes(x = exploratory_score, y = confirmatory_score, color = factor(Tone, levels = c("Non-tonal","Pitch_accent", "Tonal"))),
+             alpha = 0.8, size = 2) +
+  facet_wrap(~ factor(trial, levels = c("Melodic Discrimination", "Mistuning Perception", "Beat Alignment"))) +
+  geom_hline(yintercept = 0, lty = "dotted", alpha = .6) +
+  geom_vline(xintercept = 0, lty = "dotted", alpha = .6) +
+  theme_minimal() +
+  theme(legend.title = element_blank(),
+        legend.position = "bottom",
+        aspect.ratio = 1,
+        strip.text = element_text(size = 16),
+        panel.spacing = unit(2, "lines"),
+        legend.text = element_text(size = 12)) +
+  lims(x = c(-.4, 1), y = c(-.4, 1)) +
+  labs(x = "Exploratory mean score",
+       y = "Confirmatory mean score")+
+  scale_color_manual(values=c("#85C0F9", "#A95AA1", "#F5793A"), labels = c("Non-tonal","Pitch-accented", "Tonal"))
+
+# extra custom code to deal with clipping in facet labels...
+fixed_plot <- ggplotGrob(plot)
+
+for(i in which(grepl("strip-t", fixed_plot$layout$name))){
+  fixed_plot$grobs[[i]]$layout$clip <- "off"
+}
+
+grid::grid.draw(fixed_plot)
+
+```
+
+```{r Language-mean-corelation}
+mdt.cor <- cor.test(lang_mean[lang_mean$trial == "melodic discrimination",]$exploratory_score, lang_mean[lang_mean$trial == "melodic discrimination",]$confirmatory_score, test = "Pearson")
+mpt.cor <- cor.test(lang_mean[lang_mean$trial == "mistuning perception",]$exploratory_score, lang_mean[lang_mean$trial == "mistuning perception",]$confirmatory_score, test = "Pearson")
+cabat.cor <- cor.test(lang_mean[lang_mean$trial == "beat alignment",]$exploratory_score, lang_mean[lang_mean$trial == "beat alignment",]$confirmatory_score, test = "Pearson")
+```
+
+In follow-up analyses, we explored the consistency of language-type effects. First, we probed the stability of test performance within speakers of each of the 40 languages studied here, by comparing the mean performance of all speakers of each language across the exploratory and confirmatory datasets. This provides a measure of the stability in the relationship between performance and individual languages. Stability was high (Figure 3): mean language-wise test performance in the exploratory dataset correlated highly with that of the confirmatory dataset (melodic discrimination: $r = `r round(mdt.cor$estimate, 2)`$; beat alignment: $r = `r round(mpt.cor$estimate, 2)`$; mistuning detection: $r = `r round(cabat.cor$estimate, 2)`$; ps < 0.001).
+
+```{r Wilcox-test}
+T.NT.mdt.rank <- wilcox.test(lang_mean[lang_mean$trial == "melodic discrimination" & lang_mean$Tone == "Tonal",]$confirmatory_score, lang_mean[lang_mean$trial == "melodic discrimination" & lang_mean$Tone == "Non-tonal",]$confirmatory_score, alternative = "two.sided")
+T.NT.mpt.rank <- wilcox.test(lang_mean[lang_mean$trial == "mistuning perception" & lang_mean$Tone == "Tonal",]$confirmatory_score, lang_mean[lang_mean$trial == "mistuning perception" & lang_mean$Tone == "Non-tonal",]$confirmatory_score, alternative = "two.sided")
+T.NT.cabat.rank <- wilcox.test(lang_mean[lang_mean$trial == "beat alignment" & lang_mean$Tone == "Tonal",]$confirmatory_score, lang_mean[lang_mean$trial == "beat alignment" & lang_mean$Tone == "Non-tonal",]$confirmatory_score, alternative = "two.sided")
+
+PA.NT.mdt.rank <- wilcox.test(lang_mean[lang_mean$trial == "melodic discrimination" & lang_mean$Tone == "Pitch_accent",]$confirmatory_score, lang_mean[lang_mean$trial == "melodic discrimination" & lang_mean$Tone == "Non-tonal",]$confirmatory_score, alternative = "two.sided")
+PA.NT.mpt.rank <- wilcox.test(lang_mean[lang_mean$trial == "mistuning perception" & lang_mean$Tone == "Pitch_accent",]$confirmatory_score, lang_mean[lang_mean$trial == "mistuning perception" & lang_mean$Tone == "Non-tonal",]$confirmatory_score, alternative = "two.sided")
+PA.NT.cabat.rank <- wilcox.test(lang_mean[lang_mean$trial == "beat alignment" & lang_mean$Tone == "Pitch_accent",]$confirmatory_score, lang_mean[lang_mean$trial == "beat alignment" & lang_mean$Tone == "Non-tonal",]$confirmatory_score, alternative = "two.sided")
+
+T.PA.mdt.rank <- wilcox.test(lang_mean[lang_mean$trial == "melodic discrimination" & lang_mean$Tone == "Tonal",]$confirmatory_score, lang_mean[lang_mean$trial == "melodic discrimination" & lang_mean$Tone == "Pitch_accent",]$confirmatory_score, alternative = "two.sided")
+T.PA.mpt.rank <- wilcox.test(lang_mean[lang_mean$trial == "mistuning perception" & lang_mean$Tone == "Pitch_accent",]$confirmatory_score, lang_mean[lang_mean$trial == "mistuning perception" & lang_mean$Tone == "Tonal",]$confirmatory_score, alternative = "two.sided")
+T.PA.cabat.rank <- wilcox.test(lang_mean[lang_mean$trial == "beat alignment" & lang_mean$Tone == "Pitch_accent",]$confirmatory_score, lang_mean[lang_mean$trial == "beat alignment" & lang_mean$Tone == "Tonal",]$confirmatory_score, alternative = "two.sided")
+```
+
+We then tested the consistency of the main effects across the languages that make up each language group (Figure 4). For melodic discrimination, of the 10 highest-performing languages, half were tonal (i.e., all 5 tonal languages studied here), with tonal languages ranked significantly higher than non-tonal languages (Mann-Whitney $U = `r T.NT.mdt.rank$statistic`$, $p = `r round(T.NT.mdt.rank$p.value,3)`$). The opposite pattern was evident for beat alignment, where the 5 tonal languages were clustered toward the bottom of the distribution ($U = `r T.NT.cabat.rank$statistic`$, $p = `r round(T.NT.cabat.rank$p.value,3)`$); no significant difference was evident for the mistuning perception test, consistent with the somewhat weaker estimated differences on this test ($U = `r T.NT.mpt.rank$statistic`$, $p = `r round(T.NT.mpt.rank$p.value,3)`$). The language-wise performance in pitch-accented languages was far more variable than the tonal languages, perhaps reflecting the fuzzier nature of this category. Larger versions of each column in Figure 4 are presented in Figures S1a-c.
+
+```{r Figure4-code}
+# Figure prep code
+bubble_data <- full_join(miq_confirm_filtered %>%
+  count(language) %>%
+  mutate(language = case_when(
+    language == "Chinese/Mandarin" ~ "Mandarin",
+    language == "Chinese/Cantonese/Yue" ~ "Cantonese",
+    language == "Chinese/Taiwanese/Min Nan/Hokkien" ~ "Hokkien",
+    TRUE ~ language
+  )) %>%
+  select(language, confirmatory = n),
+  miq_explore_filtered %>%
+  count(language) %>%
+  mutate(language = case_when(
+    language == "Chinese/Mandarin" ~ "Mandarin",
+    language == "Chinese/Cantonese/Yue" ~ "Cantonese",
+    language == "Chinese/Taiwanese/Min Nan/Hokkien" ~ "Hokkien",
+    TRUE ~ language
+  )) %>%
+  select(language, exploratory = n), by = "language")
+
+bubble_data <- full_join(
+  bubble_data,
+  miq_confirm_filtered %>%
+  mutate(language = case_when(
+    language == "Chinese/Mandarin" ~ "Mandarin",
+    language == "Chinese/Cantonese/Yue" ~ "Cantonese",
+    language == "Chinese/Taiwanese/Min Nan/Hokkien" ~ "Hokkien",
+    TRUE ~ language
+  )) %>%
+  select(language, Tone) %>%
+  distinct(.), by = "language") 
+
+confirm_plot_data <- full_join(miq_confirm_filtered %>%
+                                 mutate(language = case_when(
+    language == "Chinese/Mandarin" ~ "Mandarin",
+    language == "Chinese/Cantonese/Yue" ~ "Cantonese",
+    language == "Chinese/Taiwanese/Min Nan/Hokkien" ~ "Hokkien",
+    TRUE ~ language
+  )), bubble_data, by = c("language", "Tone"))
+confirm_plot_data <- confirm_plot_data %>%
+  mutate(lang_num = paste0(language, " (", crayon::italic("n"), "=", confirmatory, ")"))  
+```
+
+```{r Figure4, fig.width = 10, fig.height = 6, fig.cap = "\\textbf{Figure 4.} Languages ranked (from high to low) by their median scores on each test. Each boxplot represents a language, with the median score of all native speakers of that language indicated by the vertical black line; the interquartile range by the width of the box, and the range by the horizontal black line. Language types are indicated by the shading (see Legend). To avoid potential confounds of musical experience, only participants who reported not having had musical training are included in this figure. Larger versions of each column are in Figures S1a-c, including language labels and language-wise sample sizes."}
+
+lang_plotter <- function(data_x, x_lab, y_lab) {
+  ggplot(data = confirm_plot_data %>%
+           filter(musicLessons == "No")) +
+    geom_boxplot(aes(y = reorder(language, {{data_x}}, median), x = {{data_x}},
+                     fill = factor(Tone, levels = c("Non-tonal","Pitch_accent", "Tonal"))), outlier.shape=NA) +
+    scale_fill_manual(values=c("#85C0F9", "#A95AA1", "#F5793A"),
+                      labels = c("Non-tonal","Pitch-accented", "Tonal"),
+                      name = NULL) +
+    geom_hline(yintercept = miq_confirm_filtered %>% group_by(country) %>% summarise(avg = mean(mdt)) %>% pull(avg) %>% median(),
+               linetype = "dotted", color = "black") +
+    lims(x = c(-3,3)) +
+    labs(x = NULL,
+         y = y_lab, 
+         title = x_lab) +
+    theme_minimal() +
+    theme(axis.text.y= element_blank(),
+          axis.title = element_text(size = 16),
+          axis.ticks.y = element_blank(),
+          legend.text = element_text(size = 12),
+          panel.grid = element_blank()
+    ) 
+}
+
+lang_plotter(mdt, "Melodic Discrimination", "Languages ranked by median score") +
+  lang_plotter(mpt, "Mistuning Perception", NULL) +
+  lang_plotter(cabat, "Beat Alignment", NULL) + 
+  plot_layout(guides = "collect") & 
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = .5, size = 16))
+
+```
+
+# Discussion
+
+We found a clear link between linguistic experience and music processing abilities: native speakers of tonal languages performed substantially better than native speakers of non-tonal languages on a test that required discriminating changes in melodic patterns; the effect size of being a tonal language speaker was nearly as large as the effect of receiving music lessons. Notably, our melodic discrimination results did not reflect a general advantage in tonal language speakers' music processing abilities; in fact, tonal language speakers did not show an advantage over speakers of non-tonal or pitch-accented languages on tests probing sensitivity to finer-grained pitch (mistuning) and rhythm (beat alignment). Indeed, on these aspects of music processing, tonal speakers showed a modest *disadvantage*.
+
+Our results are likely to generalize across tonal languages, given that they held in our dataset across multiple tonal languages, each represented by hundreds or thousands of native speakers. They  also help clarify the previously mixed pattern of results concerning the effects of linguistic experience on music processing across different tasks and samples. For example, an advantage for tonal language speakers in melodic pattern processing is consistent with the majority of previous studies [@Alexander2008; @Bidelman2013; @Bradley2016; @Creel2018; @Pfordresher2009; @Swaminathan2021; @Wong2012], though not all [@Bidelman2011a; @Giuliano2011; @Stevens2013; @Tong2018; @Zheng2018]. The modest disadvantage we see on fine-grained pitch tasks too is supported by some prior studies [@Bent2006; @Bidelman2011a; @Chang2016; @Pfordresher2009; @Stevens2013; @Tong2018; @Peretz2011; @Wong2012; @Zheng2018] but not others [@Giuliano2011; @Bidelman2013; @Hutka2015]. And while rhythmic abilities in tonal language speakers have rarely been studied [see @Wong2012 ; @Zhang2020], a disadvantage in beat discrimination is consistent with recent work showing that tonal speakers give more weight to pitch cues than duration cues; this weighting cuts across auditory domains [@Jasmin2021]. By leveraging a consistent set of tests and a large sample size, our results make clear that speaking a tonal language has a measurable but delimited connection to music skills.
+
+Why might tonal language experience have these specific effects on music perception? Like others [e.g. @Bidelman2013; @Patel2014], we suspect that the answer lies in the shared mechanisms and neural processing resources associated with auditory perception — whether they are applied to language or music. Both tonal languages and music rely on specialized sound categories (tone contours in speech; pitch motifs in music). If these categories are learned through shared, domain-general learning mechanisms, then improving the efficiency of these mechanisms through practice in either domain should result in mutual improvements [@Asaridou2013; @Patel2008; @McMullen2004; @Chang2016; @Delogu2006; @Delogu2010]. This idea highlights differences between putatively domain-general auditory processing and putatively domain-specific mechanisms that underlie music processing [e.g., the processing of pitch in the context of a tonal hierarchy; @Peretz2003; @Zatorre2002; @Krumhansl2004].
+
+It does not explain, however, *how* these learning mechanisms might be improved by experience. One possibility is that language experience could shape domain-general perceptual strategies regarding inferences about high-level perceptual categories on the basis of low-level cues: acquired perceptual biases (i.e., from tonal language experience) may aid the processing of some stimuli while worsening the processing of others. In speech, listeners give more perceptual weight to cues that are more informative in discriminating contrasts that are salient in their native language [@Schertz2020], and tonal language speakers rely more heavily on pitch to categorize and produce speech stress when acquiring a non-tonal L2 language compared to native speakers [@Wang2008; @Yu2010]. Similarly, people with pitch perception deficits learn to compensate for their deficits by giving more weight to durational cues when decoding speech prosody [@Jasmin2020b; @Jasmin2020]. Recent evidence suggests that similar effects emerge in music perception: Mandarin speakers have difficulty *ignoring* pitch cues relative to English and Spanish speakers, who have been found to more frequently make decisions based on duration cues [@Jasmin2021]. In turn, this is consistent with theories of the overlapping mechanisms of basic auditory perception [@Patel2011; @Patel2014; @Wong2007; @Tierney2013]. Our findings unite these results and show their generality.
+
+While the scope of our data collection allowed for analysis of music processing abilities in thousands of native speakers of six pitch-accented languages, we hesitate to make any strong claims concerning the link between this type of linguistic experience and music skills. From a statistical standpoint, the evidence for differences in music perceptual abilities in this group were far weaker than those of tonal languages (with much smaller effect sizes; see Figure 2 and Table 2) and far more variable (with large between-language variability within the pitch-accented language group; see Figure 4 and Figures S1a-c). While the results do converge with one prior study [@Burnham2015], which showed that for a variety of pitch tasks, Swedish (pitch-accented) speakers were marginally better than English (non-tonal) speakers, but worse than Thai or Mandarin (tonal) speakers, clearer evidence is necessary for a general claim concerning the effects of pitch-accented language experience on music processing. This, of course, is complicated by the inherently fuzzier nature of classification of pitch-accented languages, relative to tonal languages [see Footnote 1; @Gussenhoven2004; @Hyman2006; @Hyman2009]. We welcome further work that codifies that nature of both linguistic and musical pitch use across this set of generally understudied languages. To this end, we make all our data available through OSF for further analysis by interested parties.
+
+We note several other limitations. First, while we accounted for how much musical training participants had, we did not measure how long they engaged with this training, or its intensity. As a result, our estimates of the effect of musical training have greater uncertainty (although the analyses for participants with no musical training, which largely replicate the main effects, help to mitigate this concern). Second, participants only reported their first language, so we were unable to examine the effects of bilingualism or multilingualism [@Krizman2012; @Liu2017; @Liu2020], nor assess whether speaking languages that use tone differently (e.g. Mandarin and English) might have contributed additional variability in our results. Third, there are a host of other unmeasured cultural, environmental, and genetic factors that surely affect musical abilities. Moreover, these likely interact with each other, complicating causal inferences from the observational data we collected [e.g. recent findings that genetics and musical experience both influence linguistic tone perception in Cantonese; @Wong2020]. These limitations may be addressed in future experiments conducted at smaller scales, but with more precision than a citizen-science approach allows for. For example, targeted analyses of musical abilities in tonal-language speakers who are not typically of East Asian descent, such as Yoruba or Zulu speakers, could help to solidify the generality of the results (thus far, we have only collected data from 40 speakers of these languages via the citizen-science methods reported here).
+
+In sum, our results show that across a range of geographic and demographic contexts, linguistic experience alters music perception ability in reliable (but not unitary) fashions. This implies that substantively different domains of auditory perception recruit shared processing resources, which themselves are shaped by auditory experience.
+
+\bigskip
+
+# End notes {-}
+
+## Supplemental information {-}
+
+The supplemental information includes 3 text sections, 8 tables and 4 figures.
+
+## Data, code, and materials availability {-}
+
+A reproducible version of this manuscript, including all data and code, is available at <https://github.com/themusiclab/language-experience-music>. The preregistration is at <https://osf.io/xurdb>. Readers can try out the experiment at <https://themusiclab.org/quizzes/miq>; code for each of the three tests is available at <https://github.com/pmcharrison/mpt>, <https://github.com/pmcharrison/mdt>, and <https://github.com/pmcharrison/cabat>.
+
+## Acknowledgments {-}
+
+This research was supported by the Duke University Internship Funding Program (J.L.); the Harvard Data Science Initiative (S.A.M.); and the National Institutes of Health Director's Early Independence Award DP5OD024566 (S.A.M. and C.B.H.). We thank the participants; P. Harrison and D. Müllensiefen for sharing code and assisting with the implementation of their music perception tasks; J. Simson for technical and research assistance; and the members of The Music Lab for discussion and feedback on the citizen-science platform, the experiment, and the manuscript.
+
+## Author contributions {-}
+
+Conception: J.L.; S.A.M. Experimental design and implementation: S.A.M. Pre-registration and planned analyses: J.L.; C.B.H; E.B.; S.A.M. Participant recruitment: S.A.M. Analysis and visualization: J.L.; C.B.H.; E.B.; S.A.M. Writing: J.L.; C.B.H.; E.B.; S.A.M.
+
+\newpage
+
+\renewcommand{\thesection}{S\arabic{section}}
+\setcounter{section}{1}
+# Supplementary Text {-}
+
+## Details of the exploratory analysis
+
+The exploratory sample (N = `r prettyNum(nrow(miq_explore_filtered), big.mark = ",")`; demographics are in Table S5) consisted of participants who completed the three music perception tests between Nov. 8th, 2019 and Apr 27th, 2020 and passed our exclusion criteria (See Table S5 for breakdown of demographics). We ran the same analyses as in the main text (including the main regression analysis and the three alternate approaches); the results are summarized in Table S6.
+
+## Validation of self-reported headphone use
+
+Participants who self-reported that they were wearing headphones completed a 6-trial headphone detection task [@Woods2017] designed to be easy for participants wearing headphones and difficult for those listening on free-field speakers. Out of the `r prettyNum(nrow(miq_confirm_filtered %>% filter(headphone == "Yes")), big.mark = ",")` participants who indicated wearing headphones, `r prettyNum(nrow(headphone_score), big.mark = ",")` had clean and usable headphone check data. The distribution of scores for these participants (Figure S2) was strongly left-skewed with the median participant scoring `r round(mean(headphone_score$score),2)` of 6 (100%) correct. This implies that the bulk of participants who self-reported wearing headphones were, in fact, wearing headphones.
+
+## Replications of main analyses at alternate sample levels
+
+We replicated the main results (Table 2 and Figure 2) using three alternate techniques of controlling for confounding (see Methods: these were approaches of exact matching; exact matching while excluding participants who had music lessons; and inverse probability weighting). The results repeated robustly, as summarized in Table S3, and reported fully in Tables S4a-c.
+
+\clearpage
+# Supplementary Tables {-}
+```{r TableS1, eval=T}
+languages <- languages %>%
+  mutate(language = case_when(
+    language == "Chinese/Mandarin" ~ "Mandarin",
+    language == "Chinese/Cantonese/Yue" ~ "Cantonese",
+    language == "Chinese/Taiwanese/Min Nan/Hokkien" ~ "Hokkien",
+    TRUE ~ language
+  )) 
+
+languages <- languages %>%
+  mutate(Type = case_when(
+    Tone == "Tonal" ~ "Tonal",
+    Tone == "Pitch_accent" ~ "Pitch-accented",
+    TRUE ~ "Non-tonal"
+  )) 
+
+confirm_country <- miq_confirm_filtered %>%
+  group_by(language) %>%
+  count(country) %>%
+  arrange(desc(n)) %>%
+  arrange(language) %>%
+  filter(n == max(n)) %>%
+  mutate(
+  language = case_when(
+    language == "Chinese/Mandarin" ~ "Mandarin",
+    language == "Chinese/Cantonese/Yue" ~ "Cantonese",
+    language == "Chinese/Taiwanese/Min Nan/Hokkien" ~ "Hokkien",
+    TRUE ~ language
+  )) %>%
+  select(language, country)
+
+language_table <- full_join(bubble_data, confirm_country, by = "language") %>%
+  select("Confirmatory N" = confirmatory ,
+         "Exploratory N" = exploratory, language, Tone, "Top country/region" = country) %>%
+  full_join(., languages, by = c("language")) %>%
+  select(language, Type, `Exploratory N`, `Confirmatory N`, `Top country/region`, Source) %>%
+  arrange(desc(`Confirmatory N`)) %>%
+  arrange(desc(Type))
+
+colnames(language_table) <- c("Language", "Language Type",
+                              "Exploratory $n$", "Confirmatory $n$", "Top country/region", "Source")
+
+kable(language_table, booktab = T, linesep = NULL, longtable = T, escape = F) %>%
+  kable_styling(font_size = 8,
+                 position = "center") %>%
+  column_spec(6, width = "12em")  %>% 
+  footnote(general = "The languages studied here, with sample sizes, largest-sample-size country, and the source of the language classification. Abbreviations: WALS (The world atlas of language structures), LAPSyD (Lyon-Albuquerque phonological systems database)",
+           general_title = "Table S1.",
+           footnote_as_chunk = TRUE,
+           title_format = "bold",
+           escape = FALSE,
+           threeparttable = TRUE)
+```
+
+\clearpage
+```{r TableS2}
+Demo <- c("Gender", "Female", "Male", "Other", "Mean age (SD)", "Music lesson", "Yes", "No", "Mean age at onset of music lessons (SD)") 
+# T: tonal, NT: non-tonal,PA: pitch-accent
+# Gender:
+Gender <- miq_confirm_filtered %>%
+  group_by(Tone)  %>%
+  count(gender) %>%
+  mutate(prop = n/sum(n))
+  
+T.female <- Gender[Gender$Tone == "Tonal" & Gender$gender == "Female",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+T.male <- Gender[Gender$Tone == "Tonal" & Gender$gender == "Male",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+T.other <- Gender[Gender$Tone == "Tonal" & Gender$gender == "Other",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+NT.female <- Gender[Gender$Tone == "Non-tonal" & Gender$gender == "Female",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+NT.male <- Gender[Gender$Tone == "Non-tonal" & Gender$gender == "Male",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+NT.other <- Gender[Gender$Tone == "Non-tonal" & Gender$gender == "Other",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+PA.female <- Gender[Gender$Tone == "Pitch_accent" & Gender$gender == "Female",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+PA.male <- Gender[Gender$Tone == "Pitch_accent" & Gender$gender == "Male",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+PA.other <- Gender[Gender$Tone == "Pitch_accent" & Gender$gender == "Other",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+
+# Music Lessons
+Lessons <- miq_confirm_filtered %>%
+  group_by(Tone)  %>%
+  count(musicLessons) %>%
+  mutate(prop = round(n/sum(n),2))
+
+T.lessonNo <- Lessons[Lessons$Tone == "Tonal" & Lessons$musicLessons == "No",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+T.lessonYes <- Lessons[Lessons$Tone == "Tonal" & Lessons$musicLessons == "Yes",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+NT.lessonNo <- Lessons[Lessons$Tone == "Non-tonal" & Lessons$musicLessons == "No",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+NT.lessonYes <- Lessons[Lessons$Tone == "Non-tonal" & Lessons$musicLessons == "Yes",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+PA.lessonNo <- Lessons[Lessons$Tone == "Pitch_accent" & Lessons$musicLessons == "No",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+PA.lessonYes <- Lessons[Lessons$Tone == "Pitch_accent" & Lessons$musicLessons == "Yes",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+
+# Age
+Age <- miq_confirm_filtered %>%
+  group_by(Tone) %>%
+  summarise(mean = round(mean(age),2), sd = round(sd(age),2)) %>%
+  mutate(age = paste0(mean, " (", sd, ")"))
+
+T.age <- Age[Age$Tone == "Tonal",]$age
+NT.age <- Age[Age$Tone == "Non-tonal",]$age
+PA.age <- Age[Age$Tone == "Pitch_accent",]$age
+
+# Lesson Age
+lesson.Age <- miq_confirm_filtered %>%
+  filter(!is.na(lessonsAge)) %>%
+  group_by(Tone) %>%
+  summarise(mean = round(mean(lessonsAge),2),
+            sd = round(sd(lessonsAge),2))
+NT.lessonAge <- paste0(lesson.Age[1,2], " (", lesson.Age[1,3], ")")
+T.lessonAge <- paste0(lesson.Age[3,2], " (", lesson.Age[3,3], ")")
+PA.lessonAge <- paste0(lesson.Age[2,2], " (", lesson.Age[2,3], ")")
+
+Tone.demo <- c("", T.female, T.male, T.other, T.age, "", T.lessonYes, T.lessonNo, T.lessonAge)
+NT.demo <- c("", NT.female, NT.male, NT.other, NT.age, "", NT.lessonYes, NT.lessonNo, NT.lessonAge)
+PA.demo <- c("", PA.female, PA.male, PA.other, PA.age, "", PA.lessonYes, PA.lessonNo, PA.lessonAge)
+
+TableS2_Demo <- cbind(Demo, Tone.demo, NT.demo, PA.demo)
+TableS2_Demo[1,1] <- cell_spec(TableS2_Demo[1,1], bold = T)
+TableS2_Demo[5,1] <- cell_spec(TableS2_Demo[5,1], bold = T)
+TableS2_Demo[6,1] <- cell_spec(TableS2_Demo[6,1], bold = T)
+TableS2_Demo[9,1] <- cell_spec(TableS2_Demo[9,1], bold = T)
+
+Con.lang.num <- miq_confirm_filtered %>%
+  count(Tone)
+
+colnames(TableS2_Demo) <- c("Demographics", paste0("Tonal ($n$ = ", prettyNum(Con.lang.num[3,2], big.mark = ","),")"), paste0("Non-tonal ($n$ = ", prettyNum(Con.lang.num[1,2], ","),")"), paste0("Pitch-accented ($n$ = ", prettyNum(Con.lang.num[2,2], ","),")"))
+  
+kable(TableS2_Demo, booktab = T, escape = F, linesep = NULL) %>%
+  kable_styling(position = "center",
+                font_size = 9) %>% 
+  add_indent(positions = c(2,3,4,7,8)) %>% 
+  column_spec(1, width = "12em")  %>% 
+  footnote(general = "Demographics of participants in the confirmatory dataset, by language type.",
+           general_title = "Table S2.",
+           footnote_as_chunk = TRUE,
+           title_format = "bold",
+           escape = FALSE,
+           threeparttable = TRUE) 
+```
+
+\clearpage
+```{r TableS3}
+df_clean <- function (x){ 
+  x <- x %>%
+    tidy(., conf.int = T, conf.level = .95) %>%
+    mutate(sign = case_when(
+    p.value < 0.001 ~ "***",
+    p.value < 0.05 ~ "* ",
+    TRUE ~ "  "
+  )) %>%
+  mutate(coef = paste0(round(estimate, 3), sign))
+ return (x)
+}
+
+# Total lm mdt
+mdt.total.df <- df_clean(mdt.total) 
+T.mdt.total <- mdt.total.df[mdt.total.df$term == "ToneTonal",]$coef
+PA.mdt.total <- mdt.total.df[mdt.total.df$term == "TonePitch_accent",]$coef
+
+# Total lm mpt
+mpt.total.df <- df_clean(mpt.total)
+T.mpt.total <- mpt.total.df[mpt.total.df$term == "ToneTonal",]$coef
+PA.mpt.total <- mpt.total.df[mpt.total.df$term == "TonePitch_accent",]$coef
+
+# Total lm cabat
+cabat.total.df <- df_clean(cabat.total)
+T.cabat.total <- cabat.total.df[cabat.total.df$term == "ToneTonal",]$coef
+PA.cabat.total <- cabat.total.df[cabat.total.df$term == "TonePitch_accent",]$coef
+
+# Matched lm mdt
+mdt.matched.df <- df_clean(mdt.matched)
+T.mdt.matched <- mdt.matched.df[mdt.matched.df$term == "ToneTonal",]$coef
+PA.mdt.matched <- mdt.matched.df[mdt.matched.df$term == "TonePitch_accent",]$coef
+
+# matched lm mpt
+mpt.matched.df <- df_clean(mpt.matched)
+T.mpt.matched <- mpt.matched.df[mpt.matched.df$term == "ToneTonal",]$coef
+PA.mpt.matched <- mpt.matched.df[mpt.matched.df$term == "TonePitch_accent",]$coef
+
+# matched lm cabat
+cabat.matched.df <- df_clean(cabat.matched)
+T.cabat.matched <- cabat.matched.df[cabat.matched.df$term == "ToneTonal",]$coef
+PA.cabat.matched <- cabat.matched.df[cabat.matched.df$term == "TonePitch_accent",]$coef
+
+# Matched No lesson lm mdt
+mdt.nl.matched.df <- df_clean(mdt.nl.matched) 
+T.mdt.nl.matched <- mdt.nl.matched.df[mdt.nl.matched.df$term == "ToneTonal",]$coef
+PA.mdt.nl.matched <- mdt.nl.matched.df[mdt.nl.matched.df$term == "TonePitch_accent",]$coef
+
+# Matched No lesson lm mpt
+mpt.nl.matched.df <- df_clean(mpt.nl.matched) 
+T.mpt.nl.matched <- mpt.nl.matched.df[mpt.nl.matched.df$term == "ToneTonal",]$coef
+PA.mpt.nl.matched <- mpt.nl.matched.df[mpt.nl.matched.df$term == "TonePitch_accent",]$coef
+
+# Matched No lesson lm cabat
+cabat.nl.matched.df <- df_clean(cabat.nl.matched) 
+T.cabat.nl.matched <- cabat.nl.matched.df[cabat.nl.matched.df$term == "ToneTonal",]$coef
+PA.cabat.nl.matched <- cabat.nl.matched.df[cabat.nl.matched.df$term == "TonePitch_accent",]$coef
+
+# IPW mdt
+mdt.ipw.df <- df_clean(mdt.ipw)
+T.mdt.ipw <- mdt.ipw.df[mdt.ipw.df$term == "ToneTonal",]$coef
+PA.mdt.ipw <- mdt.ipw.df[mdt.ipw.df$term == "TonePitch_accent",]$coef
+
+# ipw mpt
+mpt.ipw.df <- df_clean(mpt.ipw)
+T.mpt.ipw <- mpt.ipw.df[mpt.ipw.df$term == "ToneTonal",]$coef
+PA.mpt.ipw <- mpt.ipw.df[mpt.ipw.df$term == "TonePitch_accent",]$coef
+
+# ipw cabat
+cabat.ipw.df <- df_clean(cabat.ipw)
+T.cabat.ipw <- cabat.ipw.df[cabat.ipw.df$term == "ToneTonal",]$coef
+PA.cabat.ipw <- cabat.ipw.df[cabat.ipw.df$term == "TonePitch_accent",]$coef
+
+Term <- c("Main Analysis", "Language: Tonal", "Language: Pitch-accented",
+          "Matched", "  Language: Tonal", "  Language: Pitch-accented",
+          "Matched (No Lessons Only)", "  Language: Tonal", "  Language: Pitch-accented",
+          "Inverse Probability Weighted", "  Language: Tonal", "  Language: Pitch-accented") 
+Mdt <- c("", T.mdt.total, PA.mdt.total, "", T.mdt.matched, PA.mdt.matched, "", T.mdt.nl.matched, PA.mdt.nl.matched, "", T.mdt.ipw, PA.mdt.ipw) # change name
+Mpt <- c("", T.mpt.total, PA.mpt.total, "", T.mpt.matched, PA.mpt.matched, "", T.mpt.nl.matched, PA.mpt.nl.matched, "", T.mpt.ipw, PA.mpt.ipw)
+Cabat <- c("", T.cabat.total, PA.cabat.total, "", T.cabat.matched, PA.cabat.matched, "", T.cabat.nl.matched, PA.cabat.nl.matched, "", T.cabat.ipw, PA.cabat.ipw)
+
+TableS3<- cbind(Term, Mdt, Mpt, Cabat) %>%
+  as.data.frame(.)
+colnames(TableS3) <- c("Term", "Melodic Discrimination", "Mistuning Perception", "Beat Alignment")
+TableS3[1,1] <- cell_spec(TableS3[1,1], bold = T)
+TableS3[4,1] <- cell_spec(TableS3[4,1], bold = T)
+TableS3[7,1] <- cell_spec(TableS3[7,1], bold = T)
+TableS3[10,1] <- cell_spec(TableS3[10,1], bold = T)
+
+knitr::kable(TableS3, booktabs = T, linesep = NULL, escape = F) %>%
+  kable_styling(position = "center",
+                font_size = 9)  %>% 
+  add_indent(positions = c(2,3,5,6,8,9,11,12))  %>% 
+  footnote(general = "Summary of main results, repeated across the four analysis approaches (*p < 0.05, ***p < 0.001).",
+           general_title = "Table S3.",
+           footnote_as_chunk = TRUE,
+           title_format = "bold",
+           escape = FALSE,
+           threeparttable = TRUE)
+```
+
+\clearpage
+
+```{r TableS4a}
+matched.table <- tidy(mdt.matched) %>% 
+  mutate(statistic = case_when(
+    p.value < 0.001 ~ paste0(round(statistic, 3), "***"),
+    TRUE ~ as.character(round(statistic,3))
+  )) %>% select(-p.value) %>%
+  bind_cols(., tidy(mpt.matched) %>%  
+  mutate(statistic = case_when(
+    p.value < 0.001 ~ paste0(round(statistic, 3), "***"),
+    TRUE ~ as.character(round(statistic,3))
+  )) %>% select(-term, -p.value)) %>%
+  bind_cols(., tidy(cabat.matched) %>% 
+  mutate(statistic = case_when(
+    p.value < 0.001 ~ paste0(round(statistic, 3), "***"),
+    TRUE ~ as.character(round(statistic,3))
+  )) %>% select(-term, -p.value)) %>%
+  mutate(across(where(is.numeric), ~ round(.x, digits = 3)),
+         term = case_when(
+           term == "(Intercept)" ~ "Intercept",
+           term == "TonePitch_accent" ~ "Language: Pitch-accented",
+           term == "ToneTonal" ~ "Language: Tonal",
+           term == "musicLessonsYes" ~ "Music lessons: Yes",
+           term == "age" ~ "Age",
+           term == "genderMale" ~ "Gender: Male",
+           term == "genderOther" ~ "Gender: Other",
+           TRUE ~ term
+         ))
+
+matched.table <- matched.table[c(3,2,1),]
+matched.table[1,1] <- cell_spec(matched.table[1,1], bold = T)
+matched.table[2,1] <- cell_spec(matched.table[2,1], bold = T)
+
+  kable(matched.table, format = "latex", 
+        escape = F, booktabs = T, longtable=T,
+        col.names = c(
+          "Term", "$\\beta$", "$SE$", "$t$", "$\\beta$", "$SE$", "$t$", "$\\beta$", "$SE$", "$t$"
+        )) %>% 
+  add_header_above(c(" ", "Melodic Discrimination" = 3, "Mistuning Perception" = 3, "Beat Alignment" = 3)) %>%
+  kable_styling(position = "center", font_size = 8)  %>% 
+  footnote(general = "Least squares regression outputs for each musical test from the exact match sample (***p < 0.001).",
+           general_title = "Table S4a.",
+           footnote_as_chunk = TRUE,
+           title_format = "bold",
+           escape = FALSE,
+           threeparttable = TRUE)
+```
+
+```{r TableS4b}
+nl.matched.table <- tidy(mdt.nl.matched) %>% 
+  mutate(statistic = case_when(
+    p.value < 0.001 ~ paste0(round(statistic, 3), "***"),
+    TRUE ~ as.character(round(statistic,3))
+  )) %>% select(-p.value) %>% 
+  bind_cols(., tidy(mpt.nl.matched) %>% 
+  mutate(statistic = case_when(
+    p.value < 0.001 ~ paste0(round(statistic, 3), "***"),
+    TRUE ~ as.character(round(statistic,3))
+  )) %>% select(-term, -p.value)) %>%
+  bind_cols(., tidy(cabat.nl.matched) %>% 
+  mutate(statistic = case_when(
+    p.value < 0.001 ~ paste0(round(statistic, 3), "***"),
+    TRUE ~ as.character(round(statistic,3))
+  )) %>% select(-term, -p.value)) %>%
+  mutate(across(where(is.numeric), ~ round(.x, digits = 3)),
+         term = case_when(
+           term == "(Intercept)" ~ "Intercept",
+           term == "TonePitch_accent" ~ "Language: Pitch-accented",
+           term == "ToneTonal" ~ "Language: Tonal",
+           term == "musicLessonsYes" ~ "Music lessons: Yes",
+           term == "age" ~ "Age",
+           term == "genderMale" ~ "Gender: Male",
+           term == "genderOther" ~ "Gender: Other",
+           TRUE ~ term
+         )) 
+
+nl.matched.table <- nl.matched.table[c(3,2,1),]
+nl.matched.table[1,1] <- cell_spec(nl.matched.table[1,1], bold = T)
+nl.matched.table[2,1] <- cell_spec(nl.matched.table[2,1], bold = T)
+
+  kable(nl.matched.table, format = "latex",  
+        escape = F, booktabs = T, longtable=T,
+        col.names = c(
+          "Term", "$\\beta$", "$SE$", "$t$", "$\\beta$", "$SE$", "$t$", "$\\beta$", "$SE$", "$t$"
+        )) %>% 
+  add_header_above(c(" ", "Melodic Discrimination" = 3, "Mistuning Perception" = 3, "Beat Alignment" = 3)) %>%
+  kable_styling(position = "center", font_size = 8)  %>% 
+  footnote(general =  "Least squares regression outputs for each musical test from the exact match sample without music lessons (***p < 0.001).",
+           general_title = "Table S4b.",
+           footnote_as_chunk = TRUE,
+           title_format = "bold",
+           escape = FALSE,
+           threeparttable = TRUE)
+```
+
+```{r TableS4c}
+ipw.table <- tidy(mdt.ipw) %>% 
+  mutate(statistic = case_when(
+    p.value < 0.001 ~ paste0(round(statistic, 3), "***"),
+    TRUE ~ as.character(round(statistic,3))
+  )) %>% select(-p.value) %>%
+  bind_cols(., tidy(mpt.ipw) %>% 
+  mutate(statistic = case_when(
+    p.value < 0.001 ~ paste0(round(statistic, 3), "***"),
+    TRUE ~ as.character(round(statistic,3))
+  )) %>% select(-term, -p.value)) %>%
+  bind_cols(., tidy(cabat.ipw) %>% 
+  mutate(statistic = case_when(
+    p.value < 0.001 ~ paste0(round(statistic, 3), "***"),
+    TRUE ~ as.character(round(statistic,3))
+  )) %>% select(-term, -p.value)) %>%
+  mutate(across(where(is.numeric), ~ round(.x, digits = 3)),
+         term = case_when(
+           term == "(Intercept)" ~ "Intercept",
+           term == "TonePitch_accent" ~ "Language: Pitch-accented",
+           term == "ToneTonal" ~ "Language: Tonal",
+           term == "musicLessonsYes" ~ "Music lessons: Yes",
+           term == "age" ~ "Age",
+           term == "genderMale" ~ "Gender: Male",
+           term == "genderOther" ~ "Gender: Other",
+           TRUE ~ term
+         )) 
+
+ipw.table <- ipw.table[c(3,2,1),]
+ipw.table[1,1] <- cell_spec(ipw.table[1,1], bold = T)
+ipw.table[2,1] <- cell_spec(ipw.table[2,1], bold = T)
+
+  kable(ipw.table, format = "latex",  
+        escape = F, booktabs = T, longtable=T,
+        col.names = c(
+          "Term", "$\\beta$", "$SE$", "$t$", "$\\beta$", "$SE$", "$t$", "$\\beta$", "$SE$", "$t$"
+        )) %>% 
+  add_header_above(c(" ", "Melodic Discrimination" = 3, "Mistuning Perception" = 3, "Beat Alignment" = 3)) %>%
+  kable_styling(position = "center", font_size = 8) %>% 
+  footnote(general =  "Least squares regression outputs for each musical test from the inverse probability weighted sample (**p < 0.001).",
+           general_title = "Table S4c.",
+           footnote_as_chunk = TRUE,
+           title_format = "bold",
+           escape = FALSE,
+           threeparttable = TRUE)
+```
+
+\clearpage
+
+```{r TableS5}
+Demo <- c("Gender", "Female", "Male", "Other", "Mean age (SD)", "Music lesson", "Yes", "No", "Mean age of onset of music lessons (SD)") 
+
+# Gender:
+ex.Gender <- miq_explore_filtered %>%
+  group_by(Tone)  %>%
+  count(gender) %>%
+  mutate(prop = n/sum(n))
+
+ex.T.female <- ex.Gender[ex.Gender$Tone == "Tonal" & ex.Gender$gender == "Female",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+ex.T.male <- ex.Gender[ex.Gender$Tone == "Tonal" & ex.Gender$gender == "Male",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+ex.T.other <- ex.Gender[ex.Gender$Tone == "Tonal" & ex.Gender$gender == "Other",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+ex.NT.female <- ex.Gender[ex.Gender$Tone == "Non-tonal" & ex.Gender$gender == "Female",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+ex.NT.male <- ex.Gender[ex.Gender$Tone == "Non-tonal" & ex.Gender$gender == "Male",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+ex.NT.other <- ex.Gender[ex.Gender$Tone == "Non-tonal" & ex.Gender$gender == "Other",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+ex.PA.female <- ex.Gender[ex.Gender$Tone == "Pitch_accent" & ex.Gender$gender == "Female",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+ex.PA.male <- ex.Gender[ex.Gender$Tone == "Pitch_accent" & ex.Gender$gender == "Male",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+ex.PA.other <- ex.Gender[ex.Gender$Tone == "Pitch_accent" & ex.Gender$gender == "Other",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+
+# Music Lessons
+ex.Lessons <- miq_explore_filtered %>%
+  group_by(Tone)  %>%
+  count(musicLessons) %>%
+  mutate(prop = round(n/sum(n),2))
+
+ex.T.lessonNo <- ex.Lessons[ex.Lessons$Tone == "Tonal" & ex.Lessons$musicLessons == "No",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+ex.T.lessonYes <- ex.Lessons[ex.Lessons$Tone == "Tonal" & ex.Lessons$musicLessons == "Yes",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+ex.NT.lessonNo <- ex.Lessons[ex.Lessons$Tone == "Non-tonal" & ex.Lessons$musicLessons == "No",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+ex.NT.lessonYes <- ex.Lessons[ex.Lessons$Tone == "Non-tonal" & ex.Lessons$musicLessons == "Yes",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+ex.PA.lessonNo <- ex.Lessons[ex.Lessons$Tone == "Pitch_accent" & ex.Lessons$musicLessons == "No",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+ex.PA.lessonYes <- ex.Lessons[ex.Lessons$Tone == "Pitch_accent" & ex.Lessons$musicLessons == "Yes",]$prop %>% percent(suffix = "\\%", accuracy = 0.1)
+
+# Age
+ex.Age <- miq_explore_filtered %>%
+  group_by(Tone) %>%
+  summarise(mean = round(mean(age),2), sd = round(sd(age),2)) %>%
+  mutate(age = paste0(mean, " (", sd, ")"))
+
+ex.T.age <- ex.Age[ex.Age$Tone == "Tonal",]$age
+ex.NT.age <- ex.Age[ex.Age$Tone == "Non-tonal",]$age
+ex.PA.age <- ex.Age[ex.Age$Tone == "Pitch_accent",]$age
+
+# Lesson Age
+ex.lesson.Age <- miq_explore_filtered %>%
+  filter(!is.na(lessonsAge)) %>%
+  group_by(Tone) %>%
+  summarise(mean = round(mean(lessonsAge),2),
+            sd = round(sd(lessonsAge),2))
+ex.NT.lessonAge <- paste0(ex.lesson.Age[1,2], " (", ex.lesson.Age[1,3], ")")
+ex.T.lessonAge <- paste0(ex.lesson.Age[3,2], " (", ex.lesson.Age[3,3], ")")
+ex.PA.lessonAge <- paste0(ex.lesson.Age[2,2], " (", ex.lesson.Age[2,3], ")")
+
+ex.Tone.demo <- c("", ex.T.female, ex.T.male, ex.T.other, ex.T.age, "", ex.T.lessonYes, ex.T.lessonNo, ex.T.lessonAge)
+ex.NT.demo <- c("", ex.NT.female, ex.NT.male, ex.NT.other, ex.NT.age, "", ex.NT.lessonYes, ex.NT.lessonNo, ex.NT.lessonAge)
+ex.PA.demo <- c("", ex.PA.female, ex.PA.male, ex.PA.other, ex.PA.age, "", ex.PA.lessonYes, ex.PA.lessonNo, ex.PA.lessonAge)
+
+TableS2_Demo <- cbind(Demo, ex.Tone.demo, ex.NT.demo, ex.PA.demo)
+TableS2_Demo[1,1] <- cell_spec(TableS2_Demo[1,1], bold = T)
+TableS2_Demo[5,1] <- cell_spec(TableS2_Demo[5,1], bold = T)
+TableS2_Demo[6,1] <- cell_spec(TableS2_Demo[6,1], bold = T)
+TableS2_Demo[9,1] <- cell_spec(TableS2_Demo[9,1], bold = T)
+
+Ex.lang.num <- miq_explore_filtered %>% # add sample numbers
+  count(Tone)
+colnames(TableS2_Demo) <- c("Demographics", paste0("Tonal ($n$ = ", Ex.lang.num[3,2] %>% format(., big.mark = ","),")"),
+                            paste0("Non-tonal ($n$ = ", Ex.lang.num[1,2] %>% format(., big.mark = ","),")"),
+                            paste0("Pitch-accented ($n$ = ", Ex.lang.num[2,2] %>% format(., big.mark = ","),")"))
+  
+kable(TableS2_Demo, booktab = T, escape = F, linesep = NULL) %>%
+  kable_styling(position = "center",
+                font_size = 9) %>% 
+  column_spec(1, width = "12em") %>%
+  add_indent(positions = c(2,3,4,7,8)) %>% 
+  footnote(general =  "Demographics of the exploratory dataset, by language type.",
+           general_title = "Table S5.",
+           footnote_as_chunk = TRUE,
+           title_format = "bold",
+           escape = FALSE,
+           threeparttable = TRUE)
+```
+
+```{r Exploratory-Regression}
+# Exploratory
+# Total/main analysis
+mdt.ex.total <- lm(mdt ~ Tone + musicLessons + age + gender, data = miq_explore_filtered)
+mpt.ex.total <- lm(mpt ~ Tone + musicLessons + age + gender, data = miq_explore_filtered)
+cabat.ex.total <- lm(cabat ~ Tone + musicLessons + age + gender, data = miq_explore_filtered)
+
+# matched
+mdt.ex.matched <- lm(mdt ~ Tone, data = miq_explore_matched)
+mpt.ex.matched <- lm(mpt ~ Tone, data = miq_explore_matched)
+cabat.ex.matched <- lm(cabat ~ Tone, data = miq_explore_matched)
+
+# matched without lessons
+mdt.ex.nl.matched <- lm(mdt ~ Tone, data = miq_explore_matched %>% filter(musicLessons == "No")) 
+mpt.ex.nl.matched <- lm(mpt ~ Tone, data = miq_explore_matched %>% filter(musicLessons == "No"))
+cabat.ex.nl.matched <- lm(cabat ~ Tone, data = miq_explore_matched %>% filter(musicLessons == "No"))
+
+#ipw
+load(here("data/Exploratory", "ipw_explore.RData"))
+ex.design <- svydesign(ids = ~1, weights = data_weighted$weights,
+                     data = miq_explore_filtered)
+mdt.ex.ipw  <- svyglm(mdt ~ Tone, design = ex.design, family = "gaussian")
+mpt.ex.ipw  <- svyglm(mpt ~ Tone, design = ex.design, family = "gaussian")
+cabat.ex.ipw  <- svyglm(cabat ~ Tone, design = ex.design, family = "gaussian")
+
+```
+
+\clearpage
+```{r TableS6-data}
+# Total lm mdt
+mdt.ex.total.df <- df_clean(mdt.ex.total) 
+T.mdt.ex.total <- mdt.ex.total.df[mdt.ex.total.df$term == "ToneTonal",]$coef
+PA.mdt.ex.total <- mdt.ex.total.df[mdt.ex.total.df$term == "TonePitch_accent",]$coef
+
+# Total lm mpt
+mpt.ex.total.df <- df_clean(mpt.ex.total)
+T.mpt.ex.total <- mpt.ex.total.df[mpt.ex.total.df$term == "ToneTonal",]$coef
+PA.mpt.ex.total <- mpt.ex.total.df[mpt.ex.total.df$term == "TonePitch_accent",]$coef
+
+# Total lm cabat
+cabat.ex.total.df <- df_clean(cabat.ex.total)
+T.cabat.ex.total <- cabat.ex.total.df[cabat.ex.total.df$term == "ToneTonal",]$coef
+PA.cabat.ex.total <- cabat.ex.total.df[cabat.ex.total.df$term == "TonePitch_accent",]$coef
+
+# Matched lm mdt
+mdt.ex.matched.df <- df_clean(mdt.ex.matched)
+T.mdt.ex.matched <- mdt.ex.matched.df[mdt.ex.matched.df$term == "ToneTonal",]$coef
+PA.mdt.ex.matched <- mdt.ex.matched.df[mdt.ex.matched.df$term == "TonePitch_accent",]$coef
+
+# matched lm mpt
+mpt.ex.matched.df <- df_clean(mpt.ex.matched)
+T.mpt.ex.matched <- mpt.ex.matched.df[mpt.ex.matched.df$term == "ToneTonal",]$coef
+PA.mpt.ex.matched <- mpt.ex.matched.df[mpt.ex.matched.df$term == "TonePitch_accent",]$coef
+
+# matched lm cabat
+cabat.ex.matched.df <- df_clean(cabat.ex.matched)
+T.cabat.ex.matched <- cabat.ex.matched.df[cabat.ex.matched.df$term == "ToneTonal",]$coef
+PA.cabat.ex.matched <- cabat.ex.matched.df[cabat.ex.matched.df$term == "TonePitch_accent",]$coef
+
+# Matched No lesson lm mdt
+mdt.ex.nl.matched.df <- df_clean(mdt.ex.nl.matched) 
+T.mdt.ex.nl.matched <- mdt.ex.nl.matched.df[mdt.ex.nl.matched.df$term == "ToneTonal",]$coef
+PA.mdt.ex.nl.matched <- mdt.ex.nl.matched.df[mdt.ex.nl.matched.df$term == "TonePitch_accent",]$coef
+
+# Matched No lesson lm mpt
+mpt.ex.nl.matched.df <- df_clean(mpt.ex.nl.matched) 
+T.mpt.ex.nl.matched <- mpt.ex.nl.matched.df[mpt.ex.nl.matched.df$term == "ToneTonal",]$coef
+PA.mpt.ex.nl.matched <- mpt.ex.nl.matched.df[mpt.ex.nl.matched.df$term == "TonePitch_accent",]$coef
+
+# Matched No lesson lm cabat
+cabat.ex.nl.matched.df <- df_clean(cabat.ex.nl.matched) 
+T.cabat.ex.nl.matched <- cabat.ex.nl.matched.df[cabat.ex.nl.matched.df$term == "ToneTonal",]$coef
+PA.cabat.ex.nl.matched <- cabat.ex.nl.matched.df[cabat.ex.nl.matched.df$term == "TonePitch_accent",]$coef
+
+# IPW mdt
+mdt.ex.ipw.df <- df_clean(mdt.ex.ipw)
+T.mdt.ex.ipw <- mdt.ex.ipw.df[mdt.ex.ipw.df$term == "ToneTonal",]$coef
+PA.mdt.ex.ipw <- mdt.ex.ipw.df[mdt.ex.ipw.df$term == "TonePitch_accent",]$coef
+
+# ipw mpt
+mpt.ex.ipw.df <- df_clean(mpt.ex.ipw)
+T.mpt.ex.ipw <- mpt.ex.ipw.df[mpt.ex.ipw.df$term == "ToneTonal",]$coef
+PA.mpt.ex.ipw <- mpt.ex.ipw.df[mpt.ex.ipw.df$term == "TonePitch_accent",]$coef
+
+# ipw cabat
+cabat.ex.ipw.df <- df_clean(cabat.ex.ipw)
+T.cabat.ex.ipw <- cabat.ex.ipw.df[cabat.ex.ipw.df$term == "ToneTonal",]$coef
+PA.cabat.ex.ipw <- cabat.ex.ipw.df[cabat.ex.ipw.df$term == "TonePitch_accent",]$coef
+```
+
+```{r TableS6-effect}
+Term <- c("Main Analysis", "Language: Tonal", "Language: Pitch-accented",
+          "Matched", "Language: Tonal", "Language: Pitch-accented",
+          "Matched (No Lessons Only)", "Language: Tonal", "  Language: Pitch-accented",
+          "Inverse Probability Weighted", "Language: Tonal", "Language: Pitch-accented") 
+Mdt <- c("", T.mdt.ex.total, PA.mdt.ex.total, "", T.mdt.ex.matched, PA.mdt.ex.matched, "", T.mdt.ex.nl.matched, PA.mdt.ex.nl.matched, "", T.mdt.ex.ipw, PA.mdt.ex.ipw) # change name
+Mpt <- c("", T.mpt.ex.total, PA.mpt.ex.total, "", T.mpt.ex.matched, PA.mpt.ex.matched, "", T.mpt.ex.nl.matched, PA.mpt.ex.nl.matched, "", T.mpt.ex.ipw, PA.mpt.ex.ipw)
+Cabat <- c("", T.cabat.ex.total, PA.cabat.ex.total, "", T.cabat.ex.matched, PA.cabat.ex.matched, "", T.cabat.ex.nl.matched, PA.cabat.ex.nl.matched, "", T.cabat.ex.ipw, PA.cabat.ex.ipw)
+
+TableS4<- cbind(Term, Mdt, Mpt, Cabat) %>%
+  as.data.frame(.)
+colnames(TableS4) <- c("Term", "Melodic Discrimination", "Mistuning Perception", "Beat Alignment")
+TableS4[1,1] <- cell_spec(TableS4[1,1], bold = T)
+TableS4[4,1] <- cell_spec(TableS4[4,1], bold = T)
+TableS4[7,1] <- cell_spec(TableS4[7,1], bold = T)
+TableS4[10,1] <- cell_spec(TableS4[10,1], bold = T)
+
+knitr::kable(TableS4, booktabs = T, linesep = NULL, escape = F) %>%
+  kable_styling(position = "center",
+                font_size = 9)  %>% 
+  add_indent(positions = c(2,3,5,6,8,9,11,12))  %>% 
+  footnote(general =  "Beta coefficients for different analysis approaches in the exploratory sample (*p < 0.05, ***p < 0.001).",
+           general_title = "Table S6.",
+           footnote_as_chunk = TRUE,
+           title_format = "bold",
+           escape = FALSE,
+           threeparttable = TRUE)
+```
+
+# Supplementary Figures {-}
+
+```{r FigureS1a, fig.width = 9, fig.height = 11, fig.cap= "\\textbf{Figure S1a.} Melodic discrimination scores ranked by language (ranked by median, detailed version of Figure 4 in the main text). Only participants who haven't taken music lessons are included."}
+ggplot(data = confirm_plot_data %>%
+         filter(musicLessons == "No")) +
+  geom_boxplot(aes(x = reorder(lang_num, mdt, median), y = mdt, fill = factor(Tone, levels = c("Tonal", "Non-tonal", "Pitch_accent"))), outlier.shape=NA) +
+  coord_flip()+
+  ylim(-3, 3) +
+  theme(axis.text = element_text(size = 14), axis.title = element_text(size = 16), legend.text =element_text(size = 14), legend.title =  element_text(size = 16)) +
+    scale_fill_manual(values = c("#F5793A", "#85C0F9","#A95AA1"),
+                      labels = c("Tonal", "Pitch-accented", "Non-tonal"),
+                      name = NULL) +
+  #gghighlight(Tone %in% c("Pitch_accent", "Tonal"))+
+  labs(x = "", y = "Melodic Discrimination",
+       fill = "Language type", escape = FALSE) +
+  theme_light()
+```
+
+\clearpage
+```{r FigureS1b, fig.width = 9, fig.height = 11, fig.cap= "\\textbf{Figure S1b.} Mistuning perception scores ranked by language (ranked by median, detailed version of Figure 4 in the main text). Only participants who haven't taken music lessons are included."}
+ggplot(data = confirm_plot_data%>%
+         filter(musicLessons == "No")) +
+  geom_boxplot(aes(x = reorder(lang_num, mpt, median), y = mpt, fill = factor(Tone, levels = c("Tonal", "Non-tonal", "Pitch_accent"))), outlier.shape=NA) +
+  coord_flip()+
+  ylim(-3, 3) +
+  theme(axis.text = element_text(size = 14), axis.title = element_text(size = 16), legend.text =element_text(size = 14), legend.title =  element_text(size = 16)) +
+   #gghighlight(Tone %in% c("Pitch_accent", "Tonal")) +
+    scale_fill_manual(values = c("#F5793A", "#85C0F9","#A95AA1"),
+                      labels = c("Tonal", "Pitch-accented", "Non-tonal"),
+                      name = NULL) +
+  labs(x = "", y = "Mistuning Perception",
+       fill = "Language type") +
+theme_light()
+```
+
+\clearpage
+```{r FigureS1c, fig.width = 9, fig.height = 11, fig.cap= "\\textbf{Figure S1c.} Beat alignment scores ranked by language (ranked by median, detailed version of Figure 4 in the main text). Only participants who haven't taken music lessons are included."}
+ggplot(data = confirm_plot_data%>%
+         filter(musicLessons == "No")) +
+  geom_boxplot(aes(x = reorder(lang_num, cabat, median), y = cabat, fill = factor(Tone, levels = c("Tonal", "Non-tonal", "Pitch_accent"))), outlier.shape=NA) +
+  coord_flip()+
+  ylim(-3, 3) +
+  theme(axis.text = element_text(size = 14), axis.title = element_text(size = 16), legend.text =element_text(size = 14), legend.title =  element_text(size = 16)) +
+    scale_fill_manual(values = c("#F5793A", "#85C0F9","#A95AA1"),
+                      labels = c("Tonal", "Pitch-accented", "Non-tonal"),
+                      name = NULL) +
+   #gghighlight(Tone %in% c("Pitch_accent", "Tonal"))+
+  labs(x = "", y = "Beat Alignment",
+       fill = "Language type") +
+  theme_light()
+```
+
+\clearpage
+```{r FigureS2,fig.cap = "\\textbf{Figure S2.} Distribution of headphone check scores (out of 6) among available data from participants who indicated wearing participants. The red dashed line indicates the mean score", fig.height=3}
+ggplot(headphone_score) +
+  geom_bar(aes(score)) +
+  theme_light() +
+  geom_vline(aes(xintercept = mean(headphone_score$score)), color = "red", linetype = "longdash", size = 1.5)
+```
+
+\clearpage
+
+# References {-}
