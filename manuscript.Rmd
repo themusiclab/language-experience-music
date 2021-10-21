@@ -81,9 +81,9 @@ languages <- read.csv(here("data", "language.csv"))
 
 headphone_score <- read.csv(here("data", "headphone_score.csv"))
 
-load(here("data/Confirmatory", "ipw_confirm.RData"))
+load(here("data", "Confirmatory", "ipw_confirm.RData"))
 
-Confirm_sim <- read.csv(here("data","Confirm_sim.csv"))
+Confirm_sim <- read.csv(here("data", "Confirmatory", "Confirm_sim.csv"))
 ```
 
 ```{r Confirmatory-Regressions}
