@@ -174,7 +174,7 @@ studies$min <- min(studies$samples)
 What explains these conflicting results? First, and most importantly, prior studies sample languages narrowly (i.e., typically comparing Mandarin or Cantonese speakers from mainland China to English speakers from the United States), with only a few exceptions [i.e., Yoruba speakers in @Bradley2016; Thai speakers in @Stevens2013; Dutch speakers in @Chen2016]. This, combined with generally small samples (median prior sample size per language group: $n = `r studies$median`$; interquartile range: `r studies$iqr`; minimum: $n = `r studies$min`$; see Table 1) makes it difficult to rule out confounding effects from factors such as culture and genetics [@Deutsch2006; @Hove2010] or linguistic variability [@Evans2009]. Generalization from particular speakers of specific languages to entire groups of languages (i.e., from studies of Mandarin speakers to claims concerning general effects of tonal language experience) require larger samples of both languages and participants [@Yarkoni2020; @HiltonInPress].
 
 ```{r Table1, results = "asis"}
-table1 <- read.csv(here("writing", "tonelang_table1.csv"))
+table1 <- read.csv(here("data", "tonelang_table1.csv"))
 
 #cat("\\clearpage") # force table 1 onto the start of its own page
 colnames(table1) <- c("Language comparison", "Effect", "Measure", "Study", "Tonal $n$", "Non-tonal $n$")
