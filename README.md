@@ -1,6 +1,6 @@
 # Language experience shapes music processing across 40 tonal, pitch-accented, and non-tonal languages 
 
-This repository contains data and code for Liu, Hilton, Bergelson, & Mehr (2021). You can find the preprint at xx. The pre-registration is available at https://osf.io/xurdb. 
+This repository contains data and code for Liu, Hilton, Bergelson, & Mehr (2021). You can find the preprint at https://www.biorxiv.org/content/10.1101/2021.10.18.464888v1. The pre-registration is available at https://osf.io/xurdb. 
 
 ## Anatomy of the repo
 
