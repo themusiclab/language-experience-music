@@ -1,11 +1,25 @@
-# Language experience shapes music processing across 40 tonal, pitch-accented, and non-tonal languages 
+# Language experience predicts music processing in 1/2 million speakers of 54 languages
 
-This repository contains data and code for Liu, Hilton, Bergelson, & Mehr (2021). You can find the preprint at https://www.biorxiv.org/content/10.1101/2021.10.18.464888v1. The pre-registration is available at https://osf.io/xurdb. 
+This is the repository for Liu, Hilton, Bergelson, & Mehr (2023). You can find the preprint at https://www.biorxiv.org/content/10.1101/2021.10.18.464888v1.
+
+You can find the following here:
+- an R Markdown file that generates the manuscript
+- analysis, and visualization code to produce the results reported in the manuscript
+- a script that automatically downloads the data required to run the analyses and visualizations
+
+Further data and information are available elsewhere: 
+- the data required for the analyses and visualizations is at https://zenodo.org/record/7614189#.Y-LAp-xBz0p
+- the pre-registration is available at https://osf.io/xurdb.
+- you can participate in the naïve listener experiment at <https://themusiclab.org/quizzes/ids>.
+
+**For assistance, please contact the corresponding authors: Jingxuan Liu (jl6297@gsb.columbia.edu), Courtney Hilton (courtney.hilton@auckland.ac.nz), and Samuel Mehr (sam@yale.edu).**
 
 ## Anatomy of the repo
 
-- `tonelang.Rmd` contains the manuscript and all analyses. It also contains the code (commented out at the beginning) that generates the post-exclusion data, one-to-one matched data, and inverse probability weighted data from the pre-exclusion data. These generated datasets are read in directly into the manuscript from  `/data` due to the time and memory it takes for them to be generated.
-- `tonelang_table1.csv`: Table 1 in the manuscript
+Upon first downloading this repository, you should run the `data_downloader.R` script in the home directory. This will download all the required data (from https://zenodo.org/record/7614189#.Y-LAp-xBz0p) and move it to the correct locations.
+
+After you have done this, to render the paper, run the code in `/writing/manuscript.Rmd`.
+\
 
 `/data` contains all the data: 
 
