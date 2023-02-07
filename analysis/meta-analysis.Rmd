@@ -1,0 +1,719 @@
+---
+title: "Meta-analysis"
+output:
+  pdf_document:
+    df_print: paged
+date: '2022-07-04'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=F)
+```
+
+```{r}
+library(pacman)
+p_load(
+  meta,
+  here, 
+  esc,
+  tidyverse,
+  pwr
+)
+
+```
+
+```{r}
+pool.groups = function(n1, n2, m1, m2, sd1, sd2) {
+
+    n1 = n1
+    n2 = n2
+    m1 = m1
+    m2 = m2
+    sd1 = sd1
+    sd2 = sd2
+
+    if (is.numeric(n1) == FALSE) {
+        stop("'n1' must by of type numeric().")
+    }
+
+    if (is.numeric(n2) == FALSE) {
+        stop("'n2' must by of type numeric().")
+    }
+
+    if (n1 < 1 | n2 < 1) {
+        stop("'n1' and 'n2' must both the greater than 0.")
+    }
+
+    if (is.numeric(m1) == FALSE) {
+        stop("'m1' must by of type numeric().")
+    }
+
+    if (is.numeric(m2) == FALSE) {
+        stop("'m2' must by of type numeric().")
+    }
+
+    if (is.numeric(sd1) == FALSE) {
+        stop("'sd1' must by of type numeric().")
+    }
+
+    if (is.numeric(sd2) == FALSE) {
+        stop("'sd2' must by of type numeric().")
+    }
+
+    Npooled = n1 + n2
+    Mpooled = (n1 * m1 + n2 * m2)/(n1 + n2)
+    SDpooled = sqrt(((n1 - 1) * sd1^2 + (n2 - 1) * sd2^2 + (((n1 * n2)/(n1 + n2)) * (m1^2 + m2^2 - 2 * m1 *
+        m2)))/(n1 + n2 - 1))
+
+    return(data.frame(Mpooled, SDpooled, Npooled))
+}
+```
+
+## Step 0 Obtaining data
+
+calculate data from Jasmin et al. (2021) raw data
+
+```{r}
+Jasmin2021 <- read.csv(here("data", "meta-analysis", "Jasmin2021_data.csv"))
+```
+
+```{r}
+Jasmin2021_filtered <- Jasmin2021 %>%
+  filter(years_music <=3) %>%
+  mutate(L1 = case_when(
+    L1 %in% c("e", "E") ~ "E",
+    TRUE ~ L1
+  )) # Excluded participants with musical training more than 3 years 
+```
+
+```{r}
+Jasmin2021_filtered %>%
+  count(L1)
+```
+
+
+```{r}
+Jasmin2021_filtered %>%
+  group_by(L1) %>%
+  summarise(dur_mean = mean(dur_thresh),
+            dur_sd = sd(dur_thresh),
+            pitch_mean = mean(pitch_thresh),
+            pitch_sd = sd(pitch_thresh))
+```
+
+
+## Step 1:
+Combined different languages within the same study using the pooling formula below on the raw metrics:
+
+Zheng & Samuel (2018) Korean and English
+
+```{r}
+meta_original <- read.csv(here("data/meta-analysis", "meta-analysis_original.csv"))
+#separating language column:
+meta_original[c('Tonal_language', 'Comparison_language')] <- str_split_fixed(meta_original$Language.comparison, ' vs. ', 2)
+meta_original <- subset(meta_original, select = -Language.comparison)
+
+meta_original$Measure <- trimws(meta_original$Measure)
+meta_original$Study <- trimws(meta_original$Study)
+meta_original$Tonal_language <- trimws(meta_original$Tonal_language)
+meta_original$Comparison_language <- trimws(meta_original$Comparison_language)
+# trim out white spaces
+```
+
+```{r}
+combine_lang <- function(data, study, measure, measure_overall, lang1, lang2, Tonal = T) {
+  dat <- data %>%
+    filter(Study == study) %>%
+    filter(Measure == measure) %>%
+    select(Tonal..n., Tonal.Mean, Tonal.SD)
+
+  if(Tonal == F) {
+    dat <- data %>%
+      filter(Study == study) %>%
+      filter(Measure == measure) %>%
+      select(Comparison..N., Non.tonal.Mean, Non.tonal.SD)
+  }
+
+  name <- c("n1", "n2", "m1", "m2", "sd1", "sd2")
+  values <- c(dat$Tonal..n., dat$Tonal.Mean, dat$Tonal.SD)
+
+   if(Tonal == F) {
+    values <- c(dat$Comparison..N., dat$Non.tonal.Mean, dat$Non.tonal.SD)
+  }
+
+  for(num in c(1:6)){
+  assign(name[num], values[num])
+  }
+
+  result<- pool.groups(n1, n2, m1, m2, sd1, sd2)
+
+  if(Tonal){
+    data <- data[-which(data$Study == study & data$Measure ==measure & data$Tonal_language == lang2),]
+    data$Tonal..n.[which(data$Study == study & data$Measure ==measure)] <-   result$Npooled
+    data$Tonal..n.[which(data$Study == study & data$Measure == measure_overall)] <- result$Npooled # updating the general task n
+    data$Tonal.Mean[which(data$Study == study & data$Measure ==measure)] <- result$Mpooled
+    data$Tonal.SD[which(data$Study == study & data$Measure ==measure)] <- result$SDpooled
+    data$Tonal_language[which(data$Study == study & data$Measure ==measure)] <- paste0(lang1, " or ", lang2)
+    data$Tonal_language[which(data$Study == study & data$Measure ==measure_overall)] <- paste0(lang1, " or ", lang2) # updating general task language
+  }
+
+  if(Tonal == F){
+    data <- data[-which(data$Study == study & data$Measure ==measure & data$Comparison_language == lang2),]
+    data$Comparison..N.[which(data$Study == study & data$Measure ==measure)] <-   result$Npooled
+    data$Comparison..N.[which(data$Study == study & data$Measure == measure_overall)] <-   result$Npooled
+    data$Non.tonal.Mean[which(data$Study == study & data$Measure ==measure)] <- result$Mpooled
+    data$Non.tonal.SD[which(data$Study == study & data$Measure ==measure)] <- result$SDpooled
+    data$Comparison_language[which(data$Study == study & data$Measure ==measure)] <- paste0(lang1, " or ", lang2)
+    data$Comparison_language[which(data$Study == study & data$Measure ==measure_overall)] <- paste0(lang1, " or ", lang2)
+
+  }
+
+  return(data)
+}
+```
+
+```{r}
+# Bradley (2016), Mandarin and Yoruba, contour, interval, and register:
+meta_original <- meta_original %>% #removing the general task row for Yoruba
+  filter(!(Study == "Bradley (2016)" & Measure == "Melodic comparison" & Tonal_language == "Yoruba"))
+meta_original <- combine_lang(meta_original, study = "Bradley (2016)", measure = "Contour", lang1 = "Mandarin", lang2 = "Yoruba", measure_overall = "Melodic comparison")
+meta_original <- combine_lang(meta_original, study = "Bradley (2016)", measure = "Interval", lang1 = "Mandarin", lang2 = "Yoruba", measure_overall = "Melodic comparison")
+meta_original <- combine_lang(meta_original, study = "Bradley (2016)", measure = "Register", lang1 = "Mandarin", lang2 = "Yoruba", measure_overall = "Melodic comparison")
+
+#Zheng & Samuel 2018, English and Korean,
+meta_original<- combine_lang(meta_original, study = "Zheng \\& Samuel (2018)", measure = "Melody comparison", lang1 = "Korean", lang2 = "English", Tonal = F, measure_overall = NULL)
+meta_original<- combine_lang(meta_original, study = "Zheng \\& Samuel (2018)", measure = "Pitch precision", lang1 = "Korean", lang2 = "English", Tonal = F, measure_overall = NULL)
+
+# Hove et al. 2010 Chinese and Hmong 
+meta_original<- combine_lang(meta_original, study = "Hove et al. (2010)", measure = "Relative pitch recognition", lang1 = "Chinese", lang2 = "Hmong", Tonal = T, measure_overall = NULL)
+
+# Jasmin et al. 2021 English and Spanish 
+meta_original<- combine_lang(meta_original, study = "Jasmin et al. (2021)", measure = "Pitch Discrimination", lang1 = "English", lang2 = "Spanish", Tonal = F, measure_overall = NULL)
+meta_original<- combine_lang(meta_original, study = "Jasmin et al. (2021)", measure = "Duration Discrimination", lang1 = "English", lang2 = "Spanish", Tonal = F, measure_overall = NULL)
+```
+
+```{r}
+meta_grouped <- meta_original
+```
+
+## Step 2:
+calculated cohen's d, hedge's g, se of cohen'd and hedge's g
+
+```{r}
+sd_pooled <- function(n1, n2, s1, s2) {
+  sd = sqrt(
+    ((n1-1)*s1^2 + (n2-1)*s2^2)/
+      ((n1-1) + (n2-1))
+    )
+  return(sd)
+}
+
+se_smd <- function(n1, n2, smd) {
+  se <- sqrt(
+    (n1+n2)/(n1*n2) + smd^2/(2*(n1 + n2))
+  )
+}
+```
+
+```{r}
+meta_grouped$sd_pool <- sd_pooled(n1 = meta_grouped$Tonal..n., n2 = meta_grouped$Comparison..N., s1 = meta_grouped$Tonal.SD, s2 = meta_grouped$Non.tonal.SD)
+
+meta_grouped$cohen_d <- (meta_grouped$Tonal.Mean-meta_grouped$Non.tonal.Mean)/meta_grouped$sd_pool
+
+meta_grouped$cohen_d <- ifelse(is.na(meta_grouped$cohen_d), meta_grouped$Cohen.s.D, meta_grouped$cohen_d) # add Alexander2008 to cohen's d list
+
+meta_grouped$total_n <- meta_grouped$Tonal..n. + meta_grouped$Comparison..N.
+
+meta_grouped$hedge_g <- hedges_g(meta_grouped$cohen_d, meta_grouped$total_n)
+```
+
+```{r}
+meta_grouped$se_smd <- se_smd(n1 = meta_grouped$Tonal..n., n2 = meta_grouped$Comparison..N., smd = meta_grouped$cohen_d)
+meta_grouped$se_g <- se_smd(n1 = meta_grouped$Tonal..n., n2 = meta_grouped$Comparison..N., smd = meta_grouped$hedge_g)
+
+esc_mean_sd(grp1m = 0.8060976, grp2m = 0.6600000,
+            grp1sd = 0.18554480, grp2sd = 0.2000000,
+            grp1n = 41, grp2n = 26) #checking that formula is coded correctly
+```
+
+## Step 3: Combine subtasks into composite effect sizes
+
+See Page 228 in the intro to meta-analysis book for equations
+
+For now, will assume the correlation is 1 between these subtasks
+
+```{r}
+#var_combined <- function(vector) {
+#  n <- length(vector)
+#  V1 <- vector[1]
+#  V2 <- vector[2]
+#  V3 <- ifelse(n >2, vector[3], 0)
+#  return(((1/n)**2)*(V1 + V2 + V3 + 2*sqrt(V1*V2) + 2*sqrt(V1*V3) +2*sqrt(V2*V3)))
+#}
+
+sum_calc <- function(vec){
+  sum = 0
+  for (i in c(1:length(vec))){
+  for(j in c(1:length(vec))){
+    if(j == i){
+      sum = sum
+    }
+    else{
+      sum = sum + sqrt(vec[i]*vec[j])
+    }
+    j = j+1
+  }
+  i = i + 1
+  }
+  return(sum)
+}
+
+var_combine <- function(vector){
+  m = length(vector)
+  sum = sum(vector)
+  sum_combine = sum_calc(vec = vector)
+  var = (1/m)**2*(sum + sum_combine)
+  se = sqrt(var)
+  return(c(variance = var, se = se))
+}
+```
+
+```{r}
+meta_processed <- meta_grouped
+meta_processed$var_smd <- meta_processed$se_smd**2
+meta_processed$var_g <- meta_processed$se_g**2
+```
+
+```{r}
+combine_subscore <- function(data, study, measure, specific_measures = NULL){
+  dat <- data %>%
+    filter(Study == study & Measure.overall == measure) %>%
+    filter(Measure != measure)
+
+  if(!is.null(specific_measures)){
+    dat <- data %>%
+      filter(Study == study & Measure %in% specific_measures)
+  }
+
+  g.mean = mean(dat$hedge_g)
+  g.var_se <- var_combine(dat$var_g)
+
+  smd.mean = mean(dat$cohen_d)
+  smd.var_se <- var_combine(dat$var_smd)
+
+  result <- c(g.mean = g.mean, g = g.var_se, smd.mean = smd.mean, smd = smd.var_se)
+
+  data$hedge_g[which(data$Study == study & data$Measure == measure)] <- result["g.mean"]
+  data$se_g[which(data$Study == study & data$Measure == measure)] <- result["g.se"]
+  data$var_g[which(data$Study == study & data$Measure == measure)] <- result["g.variance"]
+
+  data$cohen_d[which(data$Study == study & data$Measure == measure)] <- result["smd.mean"]
+  data$se_smd[which(data$Study == study & data$Measure == measure)] <- result["smd.se"]
+  data$var_smd[which(data$Study == study & data$Measure == measure)] <- result["smd.variance"]
+
+  if(is.null(specific_measures)){
+    data <- data %>%
+    filter(!(Study == study & Measure.overall == measure & Measure != measure ))
+  }
+
+  else{
+     data <- data %>%
+      filter(!(Study == study & Measure %in% specific_measures))
+  }
+
+
+  return(data)
+}
+```
+
+```{r}
+# Bent et al. (2006) Nonspeech pitch discrimination:
+meta_processed <- combine_subscore(meta_processed, "Bent et al. (2006)", "Nonspeech pitch discrimination")
+
+# Bradley 2016 Melodic comparison:
+meta_processed <- combine_subscore(meta_processed, "Bradley (2016)", "Melodic comparison")
+
+# Bidelman et al. (2011) Chordal detuning:
+meta_processed <- combine_subscore(meta_processed, "Bidelman et al. (2011)", "Chordal detuning discrimination")
+
+# Bidelman et al. (2013) Melody discrimination:
+meta_processed <- combine_subscore(meta_processed, "Bidelman et al. (2013)", "Melody discrimination")
+
+# Giuliano et al. (2011) Pitch discrimination & Interval discrimination:
+meta_processed <- combine_subscore(meta_processed, "Giuliano et al. (2011)", "Pitch discrimination")
+meta_processed <- combine_subscore(meta_processed, "Giuliano et al. (2011)", "Interval discrimination")
+
+# Ngo et al. (2016) Montreal Battery of Evaluation of Amusia
+meta_processed <- combine_subscore(meta_processed, "Ngo et al. (2016)", "Montreal Battery of Evaluation of Amusia", specific_measures = c("Scale", "Contour", "Interval"))
+
+# Peretz et al. (2011) Montreal Battery of Evaluation of Amusia & Pitch change detection
+meta_processed <- combine_subscore(meta_processed, "Peretz et al. (2011)", "Montreal Battery of Evaluation of Amusia", specific_measures = c("Scale", "Contour", "Interval"))
+meta_processed <- combine_subscore(meta_processed, "Peretz et al. (2011)", "Pitch change detection")
+
+# Chen et al. (2016) Montreal Battery of Evaluation of Amusia
+meta_processed <- combine_subscore(meta_processed, "Chen et al. (2016)", "Montreal Battery of Evaluation of Amusia", specific_measures = c("Scale", "Contour", "Interval"))
+```
+
+```{r}
+meta_processed$Measure <-replace(meta_processed$Measure, meta_processed$Measure == "Montreal Battery of Evaluation of Amusia", "Melody combined") # replacing MBEA with melody combined since we only combined the melody subtasks
+```
+
+```{r}
+# Chen 2016: Accuracy and raw score not 100% consistent (maybe due to excluding trials). Will calculate using accuracy bc it takes into account trial-excluding
+meta_processed <- meta_processed %>%
+  filter(!(Study == "Chen et al. (2016)" & Measure == "Melody subtest"))
+
+#write.csv(meta_processed, here("data/meta-analysis", "meta_processed.csv"))
+```
+
+```{r}
+ #write.csv(meta_processed, here("data/meta-analysis", "meta_processed_update.csv"))
+# processed dataset before filtering out measures
+```
+
+## Step 4
+```{r}
+meta_processed <- read.csv(here("data/meta-analysis", "meta_processed_update.csv"))
+```
+
+```{r}
+# Removing rhythm tests, meter, memory, speed, and non-traditional (nonspeech pitch contour identification) tests for now
+meta_filtered <- meta_processed %>%
+  #filter(Measure.Classification != "Rhythm") %>%
+  #filter(Measure != "Rhythm test") %>%
+  filter(!Measure %in% c("Pitch processing speed", "Pitch memory", "Nonspeech pitch contour identification", "Meter", "Memory"))
+
+meta_filtered <- meta_filtered %>%
+  mutate(hedge_g = case_when(
+    Flip == T ~ -1*hedge_g,
+    TRUE~hedge_g))
+```
+
+## Step 5 pooling effects-all study measures
+
+```{r}
+meta_filtered <- meta_filtered %>%
+  filter(Study != "Chang et al. (2016)") # removing this study as an outlier
+
+meta_pooled <- meta_filtered %>%
+  filter(Study != "Zhang et al. (2020)") # removing study comparing Japanese and Mandarin
+```
+
+```{r}
+#write.csv(meta_pooled, here("data/meta-analysis",
+         #                   "meta_processed_final.csv"))
+```
+
+```{r}
+meta_processed_final <- read.csv(here("data/meta-analysis",
+                            "meta_processed_final.csv"))
+```
+
+
+```{r}
+meta_processed_final$Study_Measure <- paste0(meta_processed_final$Study, ": ",  meta_processed_final$Measure)
+
+# removing the extra backslash 
+meta_processed_final <- meta_processed_final %>%
+  mutate(
+    # this complexity is needed because it is treated as an escaped character
+    Study_Measure = str_replace_all(Study_Measure, "[^[A-Za-z,0-9]()\\-\\.:& //]", "")
+  )
+```
+
+```{r}
+meta_processed_final %>%
+  count(Measure.Classification)
+```
+
+## Melodic tasks 
+
+```{r fig.width = 10}
+meta_melodic <- meta_processed_final %>%
+                   filter(Measure.Classification == "Melodic") 
+
+melodic.gen.random  <- metagen(TE = hedge_g,
+                 seTE = se_g, #
+                 studlab = Study_Measure,
+                 data = meta_melodic,
+                 sm = "SMD",
+                 fixed = FALSE,
+                 random = TRUE,
+                 method.tau = "REML",
+                 hakn = TRUE,
+                 title = "tonelang")
+
+melodic.gen.random$Power <- pwr.t2n.test(n1= meta_melodic$Tonal_N, n2 = meta_melodic$Non_tonal_N, sig.level = 0.05, d = 0.50, power = NULL)$power
+
+forest.melodic <- forest.meta(melodic.gen.random,
+            sortvar = TE)
+```
+
+## Fine-tuned tasks
+
+```{r fig.width = 10}
+meta_pitch <- meta_processed_final %>%
+                filter(Measure.Classification == "Fine-tuned")
+
+pitch.gen.random  <- metagen(TE = hedge_g,
+                 seTE = se_g, #
+                 studlab = Study_Measure,
+                 data = meta_pitch,
+                 sm = "SMD",
+                 fixed = FALSE,
+                 random = TRUE,
+                 method.tau = "REML",
+                 hakn = TRUE,
+                 title = "tonelang")
+
+pitch.gen.random$Power <- pwr.t2n.test(n1= meta_pitch$Tonal_N, n2 = meta_pitch$Non_tonal_N, sig.level = 0.05, d = 0.5, power = NULL)$power
+
+forest.pitch <- forest.meta(pitch.gen.random,
+            sortvar = TE)
+```
+
+## Rhythm:
+
+```{r fig.width = 10}
+meta_rhythm <- meta_processed_final %>%
+                filter(Measure.Classification == "Rhythm")
+
+rhythm.gen.random  <- metagen(TE = hedge_g,
+                 seTE = se_g, #
+                 studlab = Study_Measure,
+                 data = meta_rhythm,
+                 sm = "SMD",
+                 fixed = FALSE,
+                 random = TRUE,
+                 method.tau = "REML",
+                 hakn = TRUE,
+                 title = "tonelang")
+
+rhythm.gen.random$Power <- pwr.t2n.test(n1= meta_rhythm$Tonal_N, n2 = meta_rhythm$Non_tonal_N, sig.level = 0.05, d = 0.50, power = NULL)$power
+
+forest.rhythm <- forest.meta(rhythm.gen.random,
+            sortvar = TE)
+```
+
+## Numbers from prior studies 
+
+```{r}
+study_num <- meta_processed %>%
+  select(Study, Tonal_N, Non_tonal_N) %>%
+  distinct(.) %>%
+  pull(Tonal_N, Non_tonal_N)
+```
+
+```{r}
+study_total_num <- meta_processed_final %>%
+  select(Study) %>%
+  distinct(.) %>%
+  nrow()
+```
+
+```{r}
+# Adding in language information 
+nonCM_tonal <- as.data.frame(cbind(Study = c("Bradley (2016)",
+                "Swaminathan et al (2021)",
+                "Pfordresher \\& Brown (2009)",
+                "Peretz et al. (2011)",
+                "Ngo et al. (2016)",
+                "Stevens et al. (2013)",
+                "Hove et al. (2010)"),
+      Non_CM_tonal = c("Yoruba, 15",
+                       "Vietnamese, 3",
+                       "Vietnamese, 6",
+                       "Vietnamese, 4",
+                       "Vietnamese, 8",
+                       "Thai, 24",
+                       "Hmong, 14"),
+      Tonal_language = c("Mandarin or Yoruba",
+                         "Mandarin or Cantonese (mostly) vs English (mostly)",
+                         "Mandarin, Cantonese, or Vietnamese",
+                         "Mandarin, Cantonese, or Vietnamese",
+                         "Vietnamese",
+                         "Thai",
+                         "Chinese or Hmong"))
+)
+
+meta_processed_lang <- full_join(meta_processed_final, nonCM_tonal) %>%
+  mutate(Non_CM_tonal = replace_na(Non_CM_tonal, "No"))
+```
+
+```{r}
+#save(list = c("melodic.gen.random", "pitch.gen.random", "rhythm.gen.random", "study_num", "study_total_num"), file = here("results", "meta_analyses.RData"))
+```
+
+## Median power of analyzed studies 
+```{r}
+round(median(melodic.gen.random$Power),2)
+round(median(pitch.gen.random$Power),2)
+round(median(rhythm.gen.random$Power),2)
+```
+
+## Number of tonal speakers analyzed 
+```{r}
+meta_original <- read.csv(here("data/meta-analysis", "meta-analysis_original.csv"))
+
+meta_original %>%
+  filter(Study %in% meta_processed_final$Study) %>%
+  select(Study, Tonal..n.) %>%
+  distinct(.) %>%
+  pull(Tonal..n.) %>%
+  sum() # total number of tonal participants analyzed 
+```
+
+## Three layer model 
+
+```{r}
+library(metafor)
+```
+
+```{r}
+meta_pitch_only <- meta_processed_final %>%
+  filter(Measure.Classification != "Rhythm")
+```
+
+```{r}
+full.model <- rma.mv(yi = hedge_g, 
+                     V = var_g, 
+                     slab = Study,
+                     data = meta_pitch_only,
+                     random = ~ 1 | Study/X, 
+                     test = "t", 
+                     method = "REML")
+```
+
+```{r}
+summary(full.model)
+```
+
+```{r}
+mlm.variance.distribution = var.comp = function(x){
+
+  m = x
+
+  # Check class
+  if (!(class(m)[1] %in% c("rma.mv", "rma"))){
+    stop("x must be of class 'rma.mv'.")
+  }
+
+  # Check for three level model
+  if (m$sigma2s != 2){
+    stop("The model you provided does not seem to be a three-level model. This function can only be used for three-level models.")
+  }
+
+  # Check for right specification (nested model)
+  if (sum(grepl("/", as.character(m$random[[1]]))) < 1){
+    stop("Model must contain nested random effects. Did you use the '~ 1 | cluster/effect-within-cluster' notation in 'random'? See ?metafor::rma.mv for more details.")
+  }
+
+  # Get variance diagonal and calculate total variance
+  n = m$k.eff
+  vector.inv.var = 1/(diag(m$V))
+  sum.inv.var = sum(vector.inv.var)
+  sum.sq.inv.var = (sum.inv.var)^2
+  vector.inv.var.sq = 1/(diag(m$V)^2)
+  sum.inv.var.sq = sum(vector.inv.var.sq)
+  num = (n-1)*sum.inv.var
+  den = sum.sq.inv.var - sum.inv.var.sq
+  est.samp.var = num/den
+
+  # Calculate variance proportions
+  level1=((est.samp.var)/(m$sigma2[1]+m$sigma2[2]+est.samp.var)*100)
+  level2=((m$sigma2[2])/(m$sigma2[1]+m$sigma2[2]+est.samp.var)*100)
+  level3=((m$sigma2[1])/(m$sigma2[1]+m$sigma2[2]+est.samp.var)*100)
+
+  # Prepare df for return
+  Level=c("Level 1", "Level 2", "Level 3")
+  Variance=c(level1, level2, level3)
+  df.res=data.frame(Variance)
+  colnames(df.res) = c("% of total variance")
+  rownames(df.res) = Level
+  I2 = c("---", round(Variance[2:3], 2))
+  df.res = as.data.frame(cbind(df.res, I2))
+
+  totalI2 = Variance[2] + Variance[3]
+
+
+  # Generate plot
+  df1 = data.frame("Level" = c("Sampling Error", "Total Heterogeneity"),
+                  "Variance" = c(df.res[1,1], df.res[2,1]+df.res[3,1]),
+                  "Type" = rep(1,2))
+
+  df2 = data.frame("Level" = rownames(df.res),
+                   "Variance" = df.res[,1],
+                   "Type" = rep(2,3))
+
+  df = as.data.frame(rbind(df1, df2))
+
+
+  g = ggplot(df, aes(fill=Level, y=Variance, x=as.factor(Type))) +
+    coord_cartesian(ylim = c(0,1), clip = "off") +
+    geom_bar(stat="identity", position="fill", width = 1, color="black") +
+    scale_y_continuous(labels = scales::percent)+
+    theme(axis.title.x=element_blank(),
+          axis.text.y = element_text(color="black"),
+          axis.line.y = element_blank(),
+          axis.title.y=element_blank(),
+          axis.line.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.y = element_line(lineend = "round"),
+          legend.position = "none",
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(),
+          legend.background = element_rect(linetype="solid",
+                                           colour ="black"),
+          legend.title = element_blank(),
+          legend.key.size = unit(0.75,"cm"),
+          axis.ticks.length=unit(.25, "cm"),
+          plot.margin = unit(c(1,3,1,1), "lines")) +
+    scale_fill_manual(values = c("darkseagreen3", "deepskyblue3", "darkseagreen2",
+                                 "deepskyblue1", "deepskyblue2")) +
+
+
+    # Total Variance
+    annotate("text", x = 1.5, y = 1.05,
+             label = paste("Total Variance:",
+                           round(m$sigma2[1]+m$sigma2[2]+est.samp.var, 3))) +
+
+    # Sampling Error
+    annotate("text", x = 1, y = (df[1,2]/2+df[2,2])/100,
+             label = paste("Sampling Error Variance: \n", round(est.samp.var, 3)), size = 3) +
+
+    # Total I2
+    annotate("text", x = 1, y = ((df[2,2])/100)/2-0.02,
+             label = bquote("Total"~italic(I)^2*":"~.(round(df[2,2],2))*"%"), size = 3) +
+    annotate("text", x = 1, y = ((df[2,2])/100)/2+0.05,
+             label = paste("Variance not attributable \n to sampling error: \n", round(m$sigma2[1]+m$sigma2[2],3)), size = 3) +
+
+    # Level 1
+    annotate("text", x = 2, y = (df[1,2]/2+df[2,2])/100, label = paste("Level 1: \n",
+                                                                       round(df$Variance[3],2), "%", sep=""), size = 3) +
+
+    # Level 2
+    annotate("text", x = 2, y = (df[5,2]+(df[4,2]/2))/100,
+             label = bquote(italic(I)[Level2]^2*":"~.(round(df[4,2],2))*"%"), size = 3) +
+
+    # Level 3
+    annotate("text", x = 2, y = (df[5,2]/2)/100,
+             label = bquote(italic(I)[Level3]^2*":"~.(round(df[5,2],2))*"%"), size = 3)
+
+  returnlist = list(results = df.res,
+                    totalI2 = totalI2,
+                    plot = g)
+  class(returnlist) = c("mlm.variance.distribution", "list")
+
+  invisible(returnlist)
+
+  returnlist
+
+}
+```
+
+```{r}
+i2<- var.comp(full.model)
+i2
+```

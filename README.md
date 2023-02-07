@@ -20,6 +20,9 @@ Upon first downloading this repository, you should run the `data_downloader.R` s
 
 After you have done this, to render the paper, run the code in `/writing/manuscript.Rmd`.
 
+> **Warning**  
+> The manuscript file combines output from several `.Rmd` files devoted to analysis, visualization, and the like. The `full_run` flag in `manuscript.Rmd` determines whether analyses and figures should be generated from scratch (which can take > 30 minutes), or not. By default, it is set to `FALSE`, to save knitting time. If you set it to `TRUE`, all preprocessing, analysis, and visualization code will be run.
+
 ### Data and analysis code
 
 `/data` contains all the data (the `data_downloader.R` needs to be run to fully populate): 
