@@ -407,15 +407,15 @@ country <- miq_combined_filtered %>%
   arrange(language) %>%
   filter(n == max(n)) %>%
   mutate(
-  language = case_when(
-    language == "Chinese/Mandarin" ~ "Chinese/Mandarin",
-    language == "Chinese/Cantonese/Yue" ~ "Chinese/Cantonese",
-    language == "Chinese/Taiwanese/Min Nan/Hokkien" ~ "Chinese/Hokkien",
-    TRUE ~ language
-  )) %>%
+    language = case_when(
+      language == "Chinese/Mandarin" ~ "Chinese/Mandarin",
+      language == "Chinese/Cantonese/Yue" ~ "Chinese/Cantonese",
+      language == "Chinese/Taiwanese/Min Nan/Hokkien" ~ "Chinese/Hokkien",
+      TRUE ~ language
+    )) %>%
   select(language, country)
 
-country_non_unique<- country %>% 
+country_non_unique <- country %>% 
   count(language) %>%
   filter(n !=1) %>%
   pull(language)
@@ -423,12 +423,12 @@ country_non_unique<- country %>%
 if (length(country_non_unique)>0){
   
   for (x in country_non_unique) {
-  idx <- which(country$language == x)
-  country_combo = paste0(country$country[idx[1]], ", ", country$country[idx[2]])
-  country[idx[1], 2] <- country_combo
-  country <- country[-idx[2],]
-  
-}
+    idx <- which(country$language == x)
+    country_combo = paste0(country$country[idx[1]], ", ", country$country[idx[2]])
+    country[idx[1], 2] <- country_combo
+    country <- country[-idx[2],]
+    
+  }
 } 
 
 TableS1 <- miq_combined_filtered %>%
@@ -454,7 +454,6 @@ TableS1 <- miq_combined_filtered %>%
 kable(TableS1, booktab = T, linesep = NULL, longtable = T, escape = F) %>%
   kable_styling(font_size = 6.5,
                  position = "center") %>%
-  column_spec(6, width = "12em")  %>% 
   footnote(general = "The languages studied here, with sample sizes, largest-sample-size country, and the source of the language classification. Abbreviations: WALS (The world atlas of language structures), LAPSyD (Lyon-Albuquerque phonological systems database). *WALS classified as simple tone.",
            general_title = "Table S1.",
            footnote_as_chunk = TRUE,

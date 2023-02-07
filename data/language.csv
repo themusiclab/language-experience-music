@@ -1,41 +1,55 @@
 X,language,Tone,Num_Tones,Contour,Level,Top.level.family,Glottocode,Glotto.Note,Source
-16,Vietnamese,Tonal,6,5,1,Austroasiatic,viet1252,,"LAPSyD, WALS"
-32,Czech,Non-tonal,NA,NA,NA,Indo-European,czec1258,,LAPSyD
-36,Lithuanian,Pitch_accent,NA,NA,NA,Indo-European,lith1251,PHOIBLE shows 0 tones,LAPSyD
-14,Swedish,Pitch_accent,NA,NA,NA,Indo-European,swed1254,,"LAPSyD, Bailey (1988)"
-9,Portuguese,Non-tonal,NA,NA,NA,Indo-European,port1283,,"PHOIBLE, Van der Hulst et al. (2010)"
-10,Italian,Non-tonal,NA,NA,NA,Indo-European,ital1282,,LAPSyD
-13,Dutch,Non-tonal,NA,NA,NA,Indo-European,dutc1256,,LAPSyD
-27,Danish,Non-tonal,NA,NA,NA,Indo-European,dani1285,some dialects have pitch-accent,"PHOIBLE, Van der Hulst et al. (2010)"
-33,Ukrainian,Non-tonal,NA,NA,NA,Indo-European,ukra1253,,"PHOIBLE, Van der Hulst et al. (2010)"
-34,Serbian,Pitch_accent,NA,NA,NA,Indo-European,sout1528,,Inkelas \& Zec (1988); Van der Hulst et al. (2010)
-38,Malay,Non-tonal,NA,NA,NA,Austronesian,stan1306,,PHOIBLE
-39,Slovak,Non-tonal,NA,NA,NA,Indo-European,slov1269,,"PHOIBLE, Van der Hulst et al. (2010)"
-31,Croatian,Pitch_accent,NA,NA,NA,Indo-European,sout1528,,Inkelas \& Zec (1988); Van der Hulst et al. (2010)
-1,Spanish,Non-tonal,NA,NA,NA,Indo-European,stan1288,,"LAPSyD, WALS"
-2,English,Non-tonal,NA,NA,NA,Indo-European,stan1293,,"LAPSyD, WALS"
-3,Polish,Non-tonal,NA,NA,NA,Indo-European,poli1260,,"LAPSyD, WALS"
-4,German,Non-tonal,NA,NA,NA,Indo-European,nort2626,,"LAPSyD, WALS"
-5,Turkish,Non-tonal,NA,NA,NA,Turkic,nucl1301,Debate on whether pitch-accented or not,"LAPSyD, WALS"
-6,Russian,Non-tonal,NA,NA,NA,Indo-European,russ1263,,"LAPSyD, WALS"
-7,French,Non-tonal,NA,NA,NA,Indo-European,stan1290,,"LAPSyD, WALS"
-8,Chinese/Mandarin,Tonal,4,3,1,Sino-Tibetan,mand1415,,"LAPSyD, WALS"
-11,Chinese/Cantonese/Yue,Tonal,6,3,3,Sino-Tibetan,yuec1235,,WALS
-12,Indonesian,Non-tonal,NA,NA,NA,Austronesian,indo1316,,"LAPSyD, WALS"
-15,Catalan,Non-tonal,NA,NA,NA,Indo-European,stan1289,,"LAPSyD, WALS"
-17,Finnish,Non-tonal,NA,NA,NA,Uralic ,finn1318,,"LAPSyD, WALS"
-18,Tagalog,Non-tonal,NA,NA,NA,Austronesian,taga1270,,"LAPSyD, WALS"
-19,Korean,Non-tonal,NA,NA,NA,Koreanic,kore1280,,"LAPSyD, WALS"
-20,Greek,Non-tonal,NA,NA,NA,Indo-European,mode1248,,"LAPSyD, WALS"
-21,Norwegian,Pitch_accent,NA,NA,NA,Indo-European,norw1258,,"LAPSyD, WALS"
-22,Chinese/Taiwanese/Min Nan/Hokkien,Tonal,5,3,2,Sino-Tibetan,minn1241,Some dialects have 6 tones ,WALS
-23,Romanian,Non-tonal,NA,NA,NA,Indo-European,roma1327,,WALS
-24,Arabic,Non-tonal,NA,NA,NA,Afro-Asiatic,stan1318,,"LAPSyD, WALS"
-26,Hebrew,Non-tonal,NA,NA,NA,Afro-Asiatic,hebr1245,,"LAPSyD, WALS"
-28,Hungarian,Non-tonal,NA,NA,NA,Uralic,hung1274,,"LAPSyD, WALS"
-29,Farsi,Non-tonal,NA,NA,NA,Indo-European,west2369,Western Farsi,"LAPSyD, WALS"
-30,Hindi,Non-tonal,NA,NA,NA,Indo-European,hind1269,,"LAPSyD, WALS"
-35,Japanese,Pitch_accent,NA,NA,NA,Japonic,nucl1643,,"LAPSyD, WALS"
-37,Bulgarian,Non-tonal,NA,NA,NA,Indo-European,bulg1262,,"LAPSyD, WALS"
-25,Thai,Tonal,5,2,3,Tai-Kadai,tahi1261,,"LAPSyD, WALS"
+1,Vietnamese,Tonal,6,5,1,Austroasiatic,viet1252,,"LAPSyD, WALS"
+2,Czech,Non-tonal,NA,NA,NA,Indo-European,czec1258,,LAPSyD
+3,Lithuanian,Pitch-accented,NA,NA,NA,Indo-European,lith1251,PHOIBLE shows 0 tones,LAPSyD
+4,Swedish,Pitch-accented,NA,NA,NA,Indo-European,swed1254,,"LAPSyD, Bailey (1988)"
+5,Portuguese,Non-tonal,NA,NA,NA,Indo-European,port1283,,"PHOIBLE, Van der Hulst et al. (2010)"
+6,Italian,Non-tonal,NA,NA,NA,Indo-European,ital1282,,LAPSyD
+7,Dutch,Non-tonal,NA,NA,NA,Indo-European,dutc1256,,LAPSyD
+8,Danish,Non-tonal,NA,NA,NA,Indo-European,dani1285,some dialects have pitch-accent,"PHOIBLE, Van der Hulst et al. (2010)"
+9,Ukrainian,Non-tonal,NA,NA,NA,Indo-European,ukra1253,,"PHOIBLE, Van der Hulst et al. (2010)"
+10,Serbian,Pitch-accented,NA,NA,NA,Indo-European,sout1528,,Inkelas \& Zec (1988); Van der Hulst et al. (2010)
+11,Malay,Non-tonal,NA,NA,NA,Austronesian,stan1306,,PHOIBLE
+12,Slovak,Non-tonal,NA,NA,NA,Indo-European,slov1269,,"PHOIBLE, Van der Hulst et al. (2010)"
+13,Croatian,Pitch-accented,NA,NA,NA,Indo-European,sout1528,,Inkelas \& Zec (1988); Van der Hulst et al. (2010)
+14,Spanish,Non-tonal,NA,NA,NA,Indo-European,stan1288,,"LAPSyD, WALS"
+15,English,Non-tonal,NA,NA,NA,Indo-European,stan1293,,"LAPSyD, WALS"
+16,Polish,Non-tonal,NA,NA,NA,Indo-European,poli1260,,"LAPSyD, WALS"
+17,German,Non-tonal,NA,NA,NA,Indo-European,nort2626,,"LAPSyD, WALS"
+18,Turkish,Non-tonal,NA,NA,NA,Turkic,nucl1301,Debate on whether pitch-accented or not,"LAPSyD, WALS"
+19,Russian,Non-tonal,NA,NA,NA,Indo-European,russ1263,,"LAPSyD, WALS"
+20,French,Non-tonal,NA,NA,NA,Indo-European,stan1290,,"LAPSyD, WALS"
+21,Chinese/Mandarin,Tonal,4,3,1,Sino-Tibetan,mand1415,,"LAPSyD, WALS"
+22,Chinese/Cantonese/Yue,Tonal,6,3,3,Sino-Tibetan,yuec1235,,WALS
+23,Indonesian,Non-tonal,NA,NA,NA,Austronesian,indo1316,,"LAPSyD, WALS"
+24,Catalan,Non-tonal,NA,NA,NA,Indo-European,stan1289,,"LAPSyD, WALS"
+25,Finnish,Non-tonal,NA,NA,NA,Uralic ,finn1318,,"LAPSyD, WALS"
+26,Tagalog,Non-tonal,NA,NA,NA,Austronesian,taga1270,,"LAPSyD, WALS"
+27,Korean,Non-tonal,NA,NA,NA,Koreanic,kore1280,,"LAPSyD, WALS"
+28,Greek,Non-tonal,NA,NA,NA,Indo-European,mode1248,,"LAPSyD, WALS"
+29,Norwegian,Pitch-accented,NA,NA,NA,Indo-European,norw1258,,"LAPSyD, WALS"
+30,Chinese/Taiwanese/Min Nan/Hokkien,Tonal,5,3,2,Sino-Tibetan,minn1241,Some dialects have 6 tones ,WALS
+31,Romanian,Non-tonal,NA,NA,NA,Indo-European,roma1327,,WALS
+32,Arabic,Non-tonal,NA,NA,NA,Afro-Asiatic,stan1318,,"LAPSyD, WALS"
+33,Hebrew,Non-tonal,NA,NA,NA,Afro-Asiatic,hebr1245,,"LAPSyD, WALS"
+34,Hungarian,Non-tonal,NA,NA,NA,Uralic,hung1274,,"LAPSyD, WALS"
+35,Farsi,Non-tonal,NA,NA,NA,Indo-European,west2369,Western Farsi,"LAPSyD, WALS"
+36,Hindi,Non-tonal,NA,NA,NA,Indo-European,hind1269,,"LAPSyD, WALS"
+37,Japanese,Pitch-accented,NA,NA,NA,Japonic,nucl1643,,"LAPSyD, WALS"
+38,Bulgarian,Non-tonal,NA,NA,NA,Indo-European,bulg1262,,"LAPSyD, WALS"
+39,Thai,Tonal,5,2,3,Tai-Kadai,tahi1261,,"LAPSyD, WALS"
 40,Estonian,Non-tonal,NA,NA,NA,Uralic,esto1258,,Van der Hulst et al. (2010)
+41,Bemba,Tonal,,,,,,,Hamann \& Kula (2015)
+42,Burmese,Tonal,,,,,,,WALS
+43,Chinese/Other dialects,Tonal,,,,,,,WALS
+44,Ewe,Tonal,,,,,,,"Ameka (2001), WALS$^{\ast}$"
+45,Hmong,Tonal,,,,,,,WALS
+46,Igbo,Tonal,,,,,,,"Eme \& Odinye (2008)), WALS$^{\ast}$"
+47,Kinyarwanda,Tonal,,,,,,,Goldsmith \& Mpiranya (2010)
+48,Lao,Tonal,,,,,,,Westermeyer \& Westermeyer (1977)
+49,Punjabi,Tonal,,,,,,,Evans et al. (2018)
+50,Shona,Tonal,,,,,,,Jefferies (1990)
+51,Twi,Tonal,,,,,,,Manyah 2006
+52,Xhosa,Tonal,,,,,,,Niesler et al. (2009)
+53,Yoruba,Tonal,,,,,,,WALS
+54,Zulu,Tonal,,,,,,,"Niesler et al. (2009), WALS$^{\ast}$"
