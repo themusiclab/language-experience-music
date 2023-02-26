@@ -69,39 +69,6 @@ pool.groups = function(n1, n2, m1, m2, sd1, sd2) {
 }
 ```
 
-## Step 0 Obtaining data
-
-calculate data from Jasmin et al. (2021) raw data
-
-```{r}
-Jasmin2021 <- read.csv(here("data", "meta-analysis", "Jasmin2021_data.csv"))
-```
-
-```{r}
-Jasmin2021_filtered <- Jasmin2021 %>%
-  filter(years_music <=3) %>%
-  mutate(L1 = case_when(
-    L1 %in% c("e", "E") ~ "E",
-    TRUE ~ L1
-  )) # Excluded participants with musical training more than 3 years 
-```
-
-```{r}
-Jasmin2021_filtered %>%
-  count(L1)
-```
-
-
-```{r}
-Jasmin2021_filtered %>%
-  group_by(L1) %>%
-  summarise(dur_mean = mean(dur_thresh),
-            dur_sd = sd(dur_thresh),
-            pitch_mean = mean(pitch_thresh),
-            pitch_sd = sd(pitch_thresh))
-```
-
-
 ## Step 1:
 Combined different languages within the same study using the pooling formula below on the raw metrics:
 
@@ -125,20 +92,20 @@ combine_lang <- function(data, study, measure, measure_overall, lang1, lang2, To
   dat <- data %>%
     filter(Study == study) %>%
     filter(Measure == measure) %>%
-    select(Tonal..n., Tonal.Mean, Tonal.SD)
+    select(Tonal_N, Tonal.Mean, Tonal.SD)
 
   if(Tonal == F) {
     dat <- data %>%
       filter(Study == study) %>%
       filter(Measure == measure) %>%
-      select(Comparison..N., Non.tonal.Mean, Non.tonal.SD)
+      select(Non_tonal_N, Non.tonal.Mean, Non.tonal.SD)
   }
 
   name <- c("n1", "n2", "m1", "m2", "sd1", "sd2")
-  values <- c(dat$Tonal..n., dat$Tonal.Mean, dat$Tonal.SD)
+  values <- c(dat$Tonal_N, dat$Tonal.Mean, dat$Tonal.SD)
 
    if(Tonal == F) {
-    values <- c(dat$Comparison..N., dat$Non.tonal.Mean, dat$Non.tonal.SD)
+    values <- c(dat$Non_tonal_N, dat$Non.tonal.Mean, dat$Non.tonal.SD)
   }
 
   for(num in c(1:6)){
@@ -149,8 +116,8 @@ combine_lang <- function(data, study, measure, measure_overall, lang1, lang2, To
 
   if(Tonal){
     data <- data[-which(data$Study == study & data$Measure ==measure & data$Tonal_language == lang2),]
-    data$Tonal..n.[which(data$Study == study & data$Measure ==measure)] <-   result$Npooled
-    data$Tonal..n.[which(data$Study == study & data$Measure == measure_overall)] <- result$Npooled # updating the general task n
+    data$Tonal_N[which(data$Study == study & data$Measure ==measure)] <-   result$Npooled
+    data$Tonal_N[which(data$Study == study & data$Measure == measure_overall)] <- result$Npooled # updating the general task n
     data$Tonal.Mean[which(data$Study == study & data$Measure ==measure)] <- result$Mpooled
     data$Tonal.SD[which(data$Study == study & data$Measure ==measure)] <- result$SDpooled
     data$Tonal_language[which(data$Study == study & data$Measure ==measure)] <- paste0(lang1, " or ", lang2)
@@ -159,8 +126,8 @@ combine_lang <- function(data, study, measure, measure_overall, lang1, lang2, To
 
   if(Tonal == F){
     data <- data[-which(data$Study == study & data$Measure ==measure & data$Comparison_language == lang2),]
-    data$Comparison..N.[which(data$Study == study & data$Measure ==measure)] <-   result$Npooled
-    data$Comparison..N.[which(data$Study == study & data$Measure == measure_overall)] <-   result$Npooled
+    data$Non_tonal_N[which(data$Study == study & data$Measure ==measure)] <-   result$Npooled
+    data$Non_tonal_N[which(data$Study == study & data$Measure == measure_overall)] <-   result$Npooled
     data$Non.tonal.Mean[which(data$Study == study & data$Measure ==measure)] <- result$Mpooled
     data$Non.tonal.SD[which(data$Study == study & data$Measure ==measure)] <- result$SDpooled
     data$Comparison_language[which(data$Study == study & data$Measure ==measure)] <- paste0(lang1, " or ", lang2)
@@ -216,20 +183,20 @@ se_smd <- function(n1, n2, smd) {
 ```
 
 ```{r}
-meta_grouped$sd_pool <- sd_pooled(n1 = meta_grouped$Tonal..n., n2 = meta_grouped$Comparison..N., s1 = meta_grouped$Tonal.SD, s2 = meta_grouped$Non.tonal.SD)
+meta_grouped$sd_pool <- sd_pooled(n1 = meta_grouped$Tonal_N, n2 = meta_grouped$Non_tonal_N, s1 = meta_grouped$Tonal.SD, s2 = meta_grouped$Non.tonal.SD)
 
 meta_grouped$cohen_d <- (meta_grouped$Tonal.Mean-meta_grouped$Non.tonal.Mean)/meta_grouped$sd_pool
 
 meta_grouped$cohen_d <- ifelse(is.na(meta_grouped$cohen_d), meta_grouped$Cohen.s.D, meta_grouped$cohen_d) # add Alexander2008 to cohen's d list
 
-meta_grouped$total_n <- meta_grouped$Tonal..n. + meta_grouped$Comparison..N.
+meta_grouped$total_n <- meta_grouped$Tonal_N + meta_grouped$Non_tonal_N
 
 meta_grouped$hedge_g <- hedges_g(meta_grouped$cohen_d, meta_grouped$total_n)
 ```
 
 ```{r}
-meta_grouped$se_smd <- se_smd(n1 = meta_grouped$Tonal..n., n2 = meta_grouped$Comparison..N., smd = meta_grouped$cohen_d)
-meta_grouped$se_g <- se_smd(n1 = meta_grouped$Tonal..n., n2 = meta_grouped$Comparison..N., smd = meta_grouped$hedge_g)
+meta_grouped$se_smd <- se_smd(n1 = meta_grouped$Tonal_N, n2 = meta_grouped$Non_tonal_N, smd = meta_grouped$cohen_d)
+meta_grouped$se_g <- se_smd(n1 = meta_grouped$Tonal_N, n2 = meta_grouped$Non_tonal_N, smd = meta_grouped$hedge_g)
 
 esc_mean_sd(grp1m = 0.8060976, grp2m = 0.6600000,
             grp1sd = 0.18554480, grp2sd = 0.2000000,
@@ -362,19 +329,16 @@ meta_processed$Measure <-replace(meta_processed$Measure, meta_processed$Measure 
 # Chen 2016: Accuracy and raw score not 100% consistent (maybe due to excluding trials). Will calculate using accuracy bc it takes into account trial-excluding
 meta_processed <- meta_processed %>%
   filter(!(Study == "Chen et al. (2016)" & Measure == "Melody subtest"))
-
-#write.csv(meta_processed, here("data/meta-analysis", "meta_processed.csv"))
 ```
 
 ```{r}
- #write.csv(meta_processed, here("data/meta-analysis", "meta_processed_update.csv"))
-# processed dataset before filtering out measures
+classification <- read.csv(here("data/meta-analysis", "Measure_classification.csv"))
+
+meta_processed <- full_join(meta_processed, classification) %>%
+  distinct(.)
 ```
 
 ## Step 4
-```{r}
-meta_processed <- read.csv(here("data/meta-analysis", "meta_processed_update.csv"))
-```
 
 ```{r}
 # Removing rhythm tests, meter, memory, speed, and non-traditional (nonspeech pitch contour identification) tests for now
@@ -392,23 +356,12 @@ meta_filtered <- meta_filtered %>%
 ## Step 5 pooling effects-all study measures
 
 ```{r}
-meta_filtered <- meta_filtered %>%
-  filter(Study != "Chang et al. (2016)") # removing this study as an outlier
+#meta_filtered <- meta_filtered %>%
+#  filter(Study != "Chang et al. (2016)") # removing this study as an outlier
 
-meta_pooled <- meta_filtered %>%
+meta_processed_final <- meta_filtered %>%
   filter(Study != "Zhang et al. (2020)") # removing study comparing Japanese and Mandarin
 ```
-
-```{r}
-#write.csv(meta_pooled, here("data/meta-analysis",
-         #                   "meta_processed_final.csv"))
-```
-
-```{r}
-meta_processed_final <- read.csv(here("data/meta-analysis",
-                            "meta_processed_final.csv"))
-```
-
 
 ```{r}
 meta_processed_final$Study_Measure <- paste0(meta_processed_final$Study, ": ",  meta_processed_final$Measure)
@@ -541,7 +494,7 @@ meta_processed_lang <- full_join(meta_processed_final, nonCM_tonal) %>%
 ```
 
 ```{r}
-save(list = c("melodic.gen.random", "pitch.gen.random", "rhythm.gen.random", "study_num", "study_total_num"), file = here("results", "meta_analyses.RData"))
+#save(list = c("melodic.gen.random", "pitch.gen.random", "rhythm.gen.random", "study_num", "study_total_num"), file = here("results", "meta_analyses.RData"))
 ```
 
 ## Median power of analyzed studies 
@@ -557,8 +510,8 @@ meta_original <- read.csv(here("data/meta-analysis", "meta-analysis_original.csv
 
 meta_original %>%
   filter(Study %in% meta_processed_final$Study) %>%
-  select(Study, Tonal..n.) %>%
+  select(Study, Tonal_N) %>%
   distinct(.) %>%
-  pull(Tonal..n.) %>%
+  pull(Tonal_N) %>%
   sum() # total number of tonal participants analyzed 
 ```
