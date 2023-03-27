@@ -1,6 +1,6 @@
-# Language experience predicts music processing in 1/2 million speakers of 54 languages
+# Language experience predicts music processing in a half-million speakers of fifty-four languages
 
-This is the repository for Liu, Hilton, Bergelson, & Mehr (2023). You can find the preprint at https://www.biorxiv.org/content/10.1101/2021.10.18.464888v1.
+This is the repository for Liu, Hilton, Bergelson, & Mehr (2023). You can find the preprint at https://www.biorxiv.org/content/10.1101/2021.10.18.464888v2.
 
 You can find the following here:
 - an R Markdown file that generates the manuscript
