@@ -23,6 +23,7 @@ p_load(
 ```
 
 ```{r}
+# function that pools two different groups
 pool.groups = function(n1, n2, m1, m2, sd1, sd2) {
 
     n1 = n1
@@ -70,9 +71,8 @@ pool.groups = function(n1, n2, m1, m2, sd1, sd2) {
 ```
 
 ## Step 1:
-Combined different languages within the same study using the pooling formula below on the raw metrics:
 
-Zheng & Samuel (2018) Korean and English
+Combine different languages within the same study and language type (tonal or non-tonal) using the pooling formula below on the raw metrics
 
 ```{r}
 meta_original <- read.csv(here("data/meta-analysis", "meta-analysis_original.csv"))
@@ -88,6 +88,7 @@ meta_original$Comparison_language <- trimws(meta_original$Comparison_language)
 ```
 
 ```{r}
+# function that pools language groups
 combine_lang <- function(data, study, measure, measure_overall, lang1, lang2, Tonal = T) {
   dat <- data %>%
     filter(Study == study) %>%
@@ -164,10 +165,11 @@ meta_grouped <- meta_original
 ```
 
 ## Step 2:
-calculated cohen's d, hedge's g, se of cohen'd and hedge's g
+
+calculate cohen's d, hedge's g and their SE
 
 ```{r}
-sd_pooled <- function(n1, n2, s1, s2) {
+sd_pooled <- function(n1, n2, s1, s2) { # function that calculates the pooled sd of tonal and non-tonal for each study/entry
   sd = sqrt(
     ((n1-1)*s1^2 + (n2-1)*s2^2)/
       ((n1-1) + (n2-1))
@@ -187,7 +189,7 @@ meta_grouped$sd_pool <- sd_pooled(n1 = meta_grouped$Tonal_N, n2 = meta_grouped$N
 
 meta_grouped$cohen_d <- (meta_grouped$Tonal.Mean-meta_grouped$Non.tonal.Mean)/meta_grouped$sd_pool
 
-meta_grouped$cohen_d <- ifelse(is.na(meta_grouped$cohen_d), meta_grouped$Cohen.s.D, meta_grouped$cohen_d) # add Alexander2008 to cohen's d list
+meta_grouped$cohen_d <- ifelse(is.na(meta_grouped$cohen_d), meta_grouped$Cohen.s.D, meta_grouped$cohen_d) # add Alexander2008 to cohen's d list; this study reported cohen's d directly 
 
 meta_grouped$total_n <- meta_grouped$Tonal_N + meta_grouped$Non_tonal_N
 
@@ -200,24 +202,18 @@ meta_grouped$se_g <- se_smd(n1 = meta_grouped$Tonal_N, n2 = meta_grouped$Non_ton
 
 esc_mean_sd(grp1m = 0.8060976, grp2m = 0.6600000,
             grp1sd = 0.18554480, grp2sd = 0.2000000,
-            grp1n = 41, grp2n = 26) #checking that formula is coded correctly
+            grp1n = 41, grp2n = 26) # checking that formula is coded correctly using Melodic comparison from Bradley (2016) as an example
 ```
 
 ## Step 3: Combine subtasks into composite effect sizes
 
-See Page 228 in the intro to meta-analysis book for equations
+Next, we combine subtasks effect sizes into a total effect size for studies that broke down results at subtask levels (e.g., 5 vs. 10 cents difference)
 
-For now, will assume the correlation is 1 between these subtasks
+Calculation method comes from Page 228 of Borenstein, M., Hedges, L. V., Higgins, J. P. T., & Rothstein, H. R. (2009). Introduction to meta-analysis. John Wiley & Sons
+
+The correlation is assumed to be 1 between these subtasks
 
 ```{r}
-#var_combined <- function(vector) {
-#  n <- length(vector)
-#  V1 <- vector[1]
-#  V2 <- vector[2]
-#  V3 <- ifelse(n >2, vector[3], 0)
-#  return(((1/n)**2)*(V1 + V2 + V3 + 2*sqrt(V1*V2) + 2*sqrt(V1*V3) +2*sqrt(V2*V3)))
-#}
-
 sum_calc <- function(vec){
   sum = 0
   for (i in c(1:length(vec))){
@@ -326,7 +322,7 @@ meta_processed$Measure <-replace(meta_processed$Measure, meta_processed$Measure 
 ```
 
 ```{r}
-# Chen 2016: Accuracy and raw score not 100% consistent (maybe due to excluding trials). Will calculate using accuracy bc it takes into account trial-excluding
+# Chen 2016: Reported both accuracy and raw score. Accuracy and raw score not 100% consistent (maybe due to excluding trials). Will calculate using accuracy since it takes into account trial-excluding
 meta_processed <- meta_processed %>%
   filter(!(Study == "Chen et al. (2016)" & Measure == "Melody subtest"))
 ```
@@ -343,22 +339,17 @@ meta_processed <- full_join(meta_processed, classification) %>%
 ```{r}
 # Removing rhythm tests, meter, memory, speed, and non-traditional (nonspeech pitch contour identification) tests for now
 meta_filtered <- meta_processed %>%
-  #filter(Measure.Classification != "Rhythm") %>%
-  #filter(Measure != "Rhythm test") %>%
   filter(!Measure %in% c("Pitch processing speed", "Pitch memory", "Nonspeech pitch contour identification", "Meter", "Memory"))
 
 meta_filtered <- meta_filtered %>%
   mutate(hedge_g = case_when(
-    Flip == T ~ -1*hedge_g,
+    Flip == T ~ -1*hedge_g, # tasks with flip == T are those that are reverse coded (high value == low performance)
     TRUE~hedge_g))
 ```
 
 ## Step 5 pooling effects-all study measures
 
 ```{r}
-#meta_filtered <- meta_filtered %>%
-#  filter(Study != "Chang et al. (2016)") # removing this study as an outlier
-
 meta_processed_final <- meta_filtered %>%
   filter(Study != "Zhang et al. (2020)") # removing study comparing Japanese and Mandarin
 ```
@@ -376,7 +367,7 @@ meta_processed_final <- meta_processed_final %>%
 
 ```{r}
 meta_processed_final %>%
-  count(Measure.Classification)
+  count(Measure.Classification) # number of tasks per category
 ```
 
 ## Melodic tasks 
@@ -386,7 +377,7 @@ meta_melodic <- meta_processed_final %>%
                    filter(Measure.Classification == "Melodic") 
 
 melodic.gen.random  <- metagen(TE = hedge_g,
-                 seTE = se_g, #
+                 seTE = se_g, 
                  studlab = Study_Measure,
                  data = meta_melodic,
                  sm = "SMD",
@@ -465,36 +456,8 @@ study_total_num <- meta_processed_final %>%
 ```
 
 ```{r}
-# Adding in language information 
-nonCM_tonal <- as.data.frame(cbind(Study = c("Bradley (2016)",
-                "Swaminathan et al (2021)",
-                "Pfordresher \\& Brown (2009)",
-                "Peretz et al. (2011)",
-                "Ngo et al. (2016)",
-                "Stevens et al. (2013)",
-                "Hove et al. (2010)"),
-      Non_CM_tonal = c("Yoruba, 15",
-                       "Vietnamese, 3",
-                       "Vietnamese, 6",
-                       "Vietnamese, 4",
-                       "Vietnamese, 8",
-                       "Thai, 24",
-                       "Hmong, 14"),
-      Tonal_language = c("Mandarin or Yoruba",
-                         "Mandarin or Cantonese (mostly) vs English (mostly)",
-                         "Mandarin, Cantonese, or Vietnamese",
-                         "Mandarin, Cantonese, or Vietnamese",
-                         "Vietnamese",
-                         "Thai",
-                         "Chinese or Hmong"))
-)
-
-meta_processed_lang <- full_join(meta_processed_final, nonCM_tonal) %>%
-  mutate(Non_CM_tonal = replace_na(Non_CM_tonal, "No"))
-```
-
-```{r}
-#save(list = c("melodic.gen.random", "pitch.gen.random", "rhythm.gen.random", "study_num", "study_total_num"), file = here("results", "meta_analyses.RData"))
+# save(list = c("melodic.gen.random", "pitch.gen.random", "rhythm.gen.random", "study_num", "study_total_num"), file = here("results", "meta_analyses.RData"))
+# uncomment to save 
 ```
 
 ## Median power of analyzed studies 
