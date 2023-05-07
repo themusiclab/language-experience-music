@@ -1,8 +1,8 @@
 # Language experience predicts music processing in a half-million speakers of fifty-four languages
 
-This is the repository for Liu, Hilton, Bergelson, & Mehr (2023). You can find the preprint at https://www.biorxiv.org/content/10.1101/2021.10.18.464888v2.
+This is the repository for Liu, Hilton, Bergelson, & Mehr (2023, Current Biology). The paper is available at https://www.cell.com/current-biology/fulltext/S0960-9822(23)00387-1 and the preprint is at https://www.biorxiv.org/content/10.1101/2021.10.18.464888v2.
 
-You can find the following here:
+This repo contains:
 - an R Markdown file that generates the manuscript
 - analysis, and visualization code to produce the results reported in the manuscript
 - a script that automatically downloads the data required to run the analyses and visualizations
