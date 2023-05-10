@@ -1,6 +1,5 @@
 ---
 header-includes:
-- \usepackage[left]{lineno}
 - \usepackage{mdframed}
 - \usepackage{soul}
 - \usepackage{xcolor}
@@ -10,6 +9,8 @@ header-includes:
 - \usepackage{afterpage}
 - \usepackage[labelformat = empty]{caption}
 - \usepackage{rotating}
+- \usepackage{float}
+- \floatplacement{figure}{!t}
 output: 
   pdf_document:
     fig_caption: yes
@@ -17,7 +18,9 @@ output:
     latex_engine: xelatex
 csl: apa.csl
 bibliography: "citations.bib"
-nocite: "@Bailey1988; @vanderHulst2010; @Inkelas1988; @Chen2016; Ngo2016; @Swaminathan2021; @Choi2021; @Evans2018a; @Jefferies1990; @Niesler2005; @Manyah2006; @Eme2022; @Westermeyer1977; @Hamann2015; @Goldsmith2011; @Ameka2001"
+nocite: '@Bailey1988; @vanderHulst2010; @Inkelas1988; @Chen2016; Ngo2016; @Swaminathan2021;
+  @Choi2021; @Evans2018a; @Jefferies1990; @Niesler2005; @Manyah2006; @Eme2022; @Westermeyer1977;
+  @Hamann2015; @Goldsmith2011; @Ameka2001'
 urlcolor: bleu
 linkcolor: bleu
 ---
@@ -25,13 +28,15 @@ linkcolor: bleu
 
 ```{r setup, include=FALSE}
 
-knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message = FALSE, fig.pos = "!t")
+
 options(scipen = 999)
 
 # Note: producing all the matched and inverse-probability weighted datasets takes a long time and a lot of memory for the computations to run, so this rmd only runs presaved outputs. But if you want to run these analysis steps set full_run below to TRUE
 
 full_run <- FALSE
 if (full_run) {
+  source(here("analysis", "subsampling.R"))
   source(here("analysis", "analyses.R"))
   knitr::knit(here("viz", "figures.Rmd"))
 }
@@ -85,15 +90,25 @@ load(here("results", "meta_analyses.RData"))
 load(here("results", "permutation_tests.RData"))
 miq_combined_filtered <- read.csv(here("data", "Combined", "Combined_filtered.csv"))
 headphone_score <- read.csv(here("data", "headphone_score.csv"))
+New_tonal <- c("Burmese", "Hmong", "Igbo", "Lao", "Yoruba", "Zulu", "Xhosa", "Ewe", "Shona", "Punjabi", "Kinyarwanda", "Bemba", "Twi", "Chinese/Other dialects")
 ```
+
+
 
 \raggedright
 \LARGE 
 \begin{center}
-\textbf{Language experience predicts music processing\\ in $\frac{1}{2}$ million speakers of 54 languages}
+\textbf{Language experience predicts music processing in a half-million speakers of fifty-four languages}
 \end{center}
 
 \vspace{0.2in}
+
+\normalsize
+\textbf{NOTE:} This manuscript has now been published at *Current Biology*, and should be cited as Liu & Hilton et al., 2023: Liu, J., Hilton, C. B., Bergelson, E., Mehr, S. A. (2022). Language experience predicts music processing in a half-million speakers of fifty-four languages. *Current Biology* 33, 1–10, e1–e4.
+
+\begin{center}
+\textbf{-}
+\end{center}
 
 \justifying
 \normalsize
@@ -113,13 +128,14 @@ $^{\wedge}$These authors contributed equally.
 \bigskip
 \normalsize
 
+## Abstract {-}
+
 ```{=tex}
 \begin{mdframed}[backgroundcolor=gray!20]
-Tonal languages differ from other languages in their use of pitch (tones) to distinguish words. Lifelong experience speaking and hearing tonal languages has been argued to shape auditory processing in ways that generalize beyond the perception of \textit{linguistic} pitch to the perception of pitch in other domains like \textit{music}. To examine this, we first conducted a meta-analysis, finding moderate evidence for this idea, but in studies strongly limited by mostly small sample sizes in only a few tonal languages and countries. This makes it challenging to disentangle the effects of linguistic experience from variability in music training experience, cultural differences, and other potential confounds. To address these issues, we used web-based citizen science to test this question on a global scale. We assessed music perception skill in $n = `r f(users$speakers$Tonal)`$ native speakers of `r f(users$langs$Tonal)` tonal languages (e.g., Mandarin, Yoruba) and compared their performance to $n = `r f(users$speakers$other)`$ native speakers of other languages, including `r f(users$langs$Pitch_accented)` pitch-accented (e.g., Japanese) and `r f(users$langs$Non_tonal)` non-tonal languages (e.g., Hungarian). Whether or not participants had taken music lessons, native speakers of all 19 tonal languages had an improved ability to discriminate musical melodies. But this improvement came with a trade-off: relative to speakers of pitch-accented or non-tonal languages, tonal language speakers were also worse at processing the musical beat. These results, which held across tonal languages from a variety of geographic regions and were robust to geographic and demographic variation, demonstrate that linguistic experience shapes music perception ability, with implications for relations between music, language, and culture in the human mind.
+Tonal languages differ from other languages in their use of pitch (tones) to distinguish words. Lifelong experience speaking and hearing tonal languages has been argued to shape auditory processing in ways that generalize beyond the perception of linguistic pitch to the perception of pitch in other domains like music. We conducted a meta-analysis of prior studies testing this idea, finding moderate evidence supporting it. But prior studies were limited by mostly small sample sizes representing a small number of languages and countries, making it challenging to disentangle the effects of linguistic experience from variability in music training, cultural differences, and other potential confounds. To address these issues, we used web-based citizen science to assess music perception skill on a global scale in `r f(users$speakers$Tonal)` native speakers of `r f(users$langs$Tonal)` tonal languages (e.g., Mandarin, Yoruba). We compared their performance to `r f(users$speakers$other)` native speakers of other languages, including `r f(users$langs$Pitch_accented)` pitch-accented (e.g., Japanese) and `r f(users$langs$Non_tonal)` non-tonal languages (e.g., Hungarian). Whether or not participants had taken music lessons, native speakers of all 19 tonal languages had an improved ability to discriminate musical melodies on average, relative to speakers of non-tonal languages. But this improvement came with a trade-off: tonal language speakers were also worse at processing the musical beat. The results, which held across native speakers of many diverse languages and were robust to geographic and demographic variation, demonstrate that linguistic experience shapes music perception, with implications for relations between music, language, and culture in the human mind.
 \end{mdframed}
 ```
 
-\linenumbers
 
 # Introduction
 
@@ -146,8 +162,7 @@ We aggregated summary information from `r study_total_num` prior studies of musi
 The results are in Table 1. The overall effect size estimate suggests that native speakers of tonal languages have overall advantages in both categories of pitch-relevant tasks (melody processing: `r round(melodic.gen.random$TE.random, 3)`, 95% CI = [`r round(melodic.gen.random$lower.random,3)`, `r round(melodic.gen.random$upper.random,3)`]; fine-grained pitch processing: `r round(pitch.gen.random$TE.random, 3)`, 95% CI = [`r round(pitch.gen.random$lower.random,3)`, `r round(pitch.gen.random$upper.random,3)`]), but not in rhythm tasks (rhythm processing: `r round(rhythm.gen.random$TE.random, 3)`, 95% CI = [`r round(rhythm.gen.random$lower.random,3)`, `r round(rhythm.gen.random$upper.random,3)`]). The meta-analyses also identified three serious concerns, however, which preclude any generalized claim about the effects of tonal language experience on music processing ability.
 
 ```{r Table1}
-#| fig.cap="\\textbf{Table 1.} Meta-analytic effects estimated for melody processing, fine-grained pitch processing, and rhythm processing, aggregated from 19 prior studies. Detailed information about the study and measures used, and the language composition of the participants in each study is included in the table. The figure embedded within the table shows the estimated effects for each study individually (modelled as random effects), with 95% confidence intervals indicated by the cross-bars. The bolded diamond shaped points represent the overall fixed-effect estimates for each of the three study categories (melody, fine-grained pitch, and rhythm)."
-
+#| fig.cap="\\textbf{Table 1. Meta-analytic evidence for the effects of tonal language experience on music processing} Meta-analytic effects estimated for melody processing, fine-grained pitch processing, and rhythm processing, aggregated from 20 prior studies. Results show a statistically significant advantage in melody processing for speakers of tonal languages compared to non-tonal languages (p = 0.005) of roughly half a standard deviation in size. Fine-grained pitch processing and rhythm processing did not show statistically significant differences (ps > 0.05). These findings are, however, limited by the lack of diversity in sampling of languages and countries, and mostly small sample sizes. The table contains detailed information about the study and measures used, and the language composition of the participants in each study is included in the table. The figure embedded within the table shows the estimated effects for each study individually (modeled as random effects), with 95% confidence intervals indicated by the cross-bars. The bolded diamond shaped points represent the overall fixed-effect estimates for each of the three study categories (melody, fine-grained pitch, and rhythm)."
 
 knitr::include_graphics(here("viz", "figures", "meta-plot.pdf"))
 ```
@@ -164,6 +179,13 @@ Thus, the meta-analysis demonstrates evidence for a potential effect of tonal la
 In the rest of this paper, we report a study of the ability to discriminate melodies, detect mistuned singing, and detect misaligned beats, in `r f(users$final)` people across the globe. Participants self-reported their native language, location, demographics, and degree of musical training, enabling language-wise and language-type-wise analyses of each of these musical abilities and their relations to linguistic and musical experience.
 
 # Citizen-science experiment
+
+```{r Figure1}
+#| fig.cap = "\\textbf{Figure 1. Sample sizes for each language, grouped by language type} The font of each language's name is scaled proportionally to that language's sample size. Horizontal positions are jittered to improve readability. The right panel shows additional tonal languages with smaller sample sizes included in the analyses to increase the diversity of the tonal-language sample."
+knitr::include_graphics(here("viz", "figures", "Figure1-1.pdf"))
+```
+
+
 
 Generalization from particular speakers of specific languages to entire groups of languages, with high statistical power, and with controls for potential sources of systematic bias, requires large samples of participants representing a variety of languages and countries [@Blasi2022; @Yarkoni2022]. We report such a test here, using methods of gamification and citizen science [@Hilton2022; @Huber2020; @Hartshorne2019; @Long2023].
 
@@ -187,16 +209,19 @@ Languages were primarily classified based on the World Atlas of Language Structu
 
 In addition to participants' music perception scores, we collected demographic information (gender, age, whether or not the participant had taken music lessons, and the age at onset of those lessons). These data are reported in Table S2.
 
-```{r Figure1}
-#| fig.cap = "\\textbf{Figure 1.} Sample sizes for each language, grouped by language type. The font of each language's name is scaled proportionally to that language's sample size. Horizontal positions are jittered to improve readability. The right panel shows additional tonal languages with smaller sample sizes included in the analyses to increase the diversity of the tonal-language sample."
-knitr::include_graphics(here("viz", "figures", "Figure1-1.pdf"))
-```
-
 ### Stimuli
 
-Participants completed three music perception tasks measuring ability in *melodic discrimination* [@Harrison2017], *mistuning perception* [@Larrouy-Maestri2019], and *beat alignment* [@Harrison2018]. The melodic discrimination task assesses the ability to detect differences between melodic patterns: participants listened to three transpositions of the same melody and were asked to choose the version in which one pitch interval was altered (i.e., an oddball task). The mistuning perception task assesses the ability to identify small-pitch differences in vocal pitch: participants listened to two versions of a short musical excerpt, one of which had a vocal track that was detuned from the background music, and were asked to identify the out-of-tune version. The beat alignment task assesses the ability to detect correct synchronization between a click track and some music: participants listened to two versions of the same musical excerpt, both accompanied by a click track; one of the click tracks was misaligned by a constant proportion and participants were asked which example was correctly aligned.
+Participants completed three music perception tasks measuring ability in *melodic discrimination* [@Harrison2017], *mistuning perception* [@Larrouy-Maestri2019], and *beat alignment* [@Harrison2018]. As in the original tasks, each subtask was presented adaptively via `psychTestR` [@Harrison2020]. To minimize the duration of the experiment, we fixed the length of each subtask at 15 trials, the minimum number of trials with acceptably low mean standard errors, according to the original task designs. Demographic items were presented via `jsPsych` [@deLeeuw2015]. The citizen-science platform distributed the experiments using a modified pre-release version of `pushkin` [@Hartshorne2019]. Readers can try the three music perception tasks at <https://themusiclab.org/quizzes/miq>.
 
-As in the original tasks cited above, each subtask was presented adaptively via `psychTestR` [@Harrison2020]. To minimize the duration of the experiment, we fixed the length of each subtask at 15 trials, the minimum number of trials with acceptably low mean standard errors, according to the original task designs. Demographic items were presented via `jsPsych` [@deLeeuw2015]. The citizen-science platform distributed the experiments using a modified pre-release version of `pushkin` [@Hartshorne2019]. Readers can try the three music perception tasks at <https://themusiclab.org/quizzes/miq>.
+#### Melodic discrimination task
+
+The melodic discrimination task assesses the ability to detect differences in relative pitch between melodic patterns via a three-alternative forced-choice design (3AFC). Participants listened to three transpositions of the same melody and were asked to choose the version in which a relative pitch interval was altered (the 'odd one out'). The materials for the melodic discrimination task were generated algorithmically to achieve precise theory-based gradations in task difficulty as predicted by a cognitive model of melodic processing [@Harrison2017]. These melodies were synthesized using MIDI with an identical piano timbre and a tempo of 120 beats per minute. 
+
+#### Mistuning perception task
+The mistuning perception task assesses the ability to identify small-pitch differences in vocal tuning relative to other musical parts using a two-alternative forced-choice design (2AFC). Participants listened to two versions of a short musical excerpt, and in one of the excerpts the vocal track was detuned from the background music. Participants were asked to identify the detuned version. The materials for the mistuning perception task were derived from 37 royalty free excerpts of popular music songs that represent several styles. For each excerpt, the detuned versions were generated where the vocal part was pitch-shifted either up or down by an amount between 10 to 100 cents in 5-cent increments [@Larrouy-Maestri2019].
+
+#### Beat alignment task
+The beat alignment task assesses the ability to detect synchronization between a click track and some music via a two-alternative forced-choice design (2AFC). Participants listened to two versions of the same musical excerpt, both accompanied by a click track. One of the click tracks was misaligned by a constant proportion of the beat periodicity (where the proportion is within the range $0 < P \leq 0.5$, where P is the beat periodicity) and participants were asked to identify the track that was correctly aligned. The materials for the beat alignment task were derived from 32 excerpts from the 'Audio Network' production music library and consist of a variety of musical genres and meters. These tracks were then overlaid with the click track, consisting of sine tones with a frequency of 1000Hz and a duration of 20ms with a 10ms fade out [@Harrison2018].
 
 ### Analysis strategy
 
@@ -225,6 +250,13 @@ Contrasting with the prior meta-analytic effects, however, there was no clear ad
 
 Lastly, contrary the meta-analytic results, which found no effect of tonal language experience on rhythm perception, native speakers of tonal languages performed *worse* in beat perception relative to the non-tonal and pitch-accented groups ($\beta$ = `r main_analysis_estimates$cabat$ToneTonal$beta`, $t$ = `r main_analysis_estimates$cabat$ToneTonal$t`, $p$ `r main_analysis_estimates$cabat$ToneTonal$p`). Like the melodic discrimination effect, the size of this effect was large, approaching the size of effects of having taken music lessons (see Figure 2).
 
+
+```{r Figure2}
+#| fig.cap = "\\textbf{Figure 2. Native speakers of tonal languages have an advantage in melodic discrimination and a disadvantage in beat alignment} The solid dots show the estimated effects of language type, marginalizing over the average proportions for ages and gender, on each of the three music perception abilities tested, but without the estimated effects of having had music lessons. The additive marginal effects of having music lessons are displayed with the faded triangles, providing a comparison point for the language-type effect sizes. After marginalization, for ease of interpretability, a scalar transformation was applied to the coefficients such that the \"Non-tonal\" and \"No music lessons\" coefficients were equal to zero. Error-bars represent 95% confidence intervals of the mean. The dotted horizontal black line indicates the baseline (*y* = 0). Full statistical reporting of the model's untransformed fixed-effects is in Table 2."
+knitr::include_graphics(here("viz", "figures", "Figure3-1.pdf"))
+```
+
+
 ```{r Table2, results='asis'}
 
 #cat("\\clearpage") # force table onto the start of its own page
@@ -237,18 +269,13 @@ kable(Table2, format = "latex",
   add_header_above(c(" ", "Melodic Discrimination" = 3, "Mistuning Perception" = 3, "Beat Alignment" = 3)) %>%
   kable_styling(position = "center", font_size = 7.5) %>% 
   row_spec(1, bold = T,  background = "#DCDCDC") %>%
-  footnote(general = "Fixed-effects from random-effects models for each of the three musical tasks. ***$p < 0.001$, **$p < 0.01$, *$p$ < 0.05.",
+  footnote(general = "\\\\textbf{Fixed-effects from random-effects models for each of the three musical tasks} The models estimate the effect of natively speaking a tonal or pitch-accent language on each of the three music perception tests, relative to speaking a non-tonal language, while adjusting for age, gender, whether the person has had music lessons, and the interaction between having had music lessons and the effect of language type. Random intercepts for the participant's native language and their country of residence are also included in the model and visualized in Figure 4. The focal effects of speaking a tonal language for each of the musical tests also robustly replicate when additionally adjusting for income (Table S3), education (Table S4), or world-region (Table S5). ***$p < 0.001$, **$p < 0.01$, *$p$ < 0.05.",
            general_title = "Table 2.",
            footnote_as_chunk = TRUE,
            title_format = "bold",
            escape = FALSE,
            threeparttable = TRUE)
-```
 
-
-```{r Figure2}
-#| fig.cap = "\\textbf{Figure 2.} Native speakers of tonal languages have an advantage in melodic discrimination and a disadvantage in beat alignment. The solid dots show the estimated effects of language type, marginalizing over the average proportions for ages and gender, on each of the three music perception abilities tested, but without the estimated effects of having had music lessons. The additive marginal effects of having music lessons are displayed with the faded triangles, providing a comparison point for the language-type effect sizes. After marginalization, for ease of interpretability, a scalar transformation was applied to the coefficients such that the \"Non-tonal\" and \"No music lessons\" coefficients were equal to zero. Error-bars represent 95% confidence intervals of the mean. The dotted horizontal black line indicates the baseline (*y* = 0)."
-knitr::include_graphics(here("viz", "figures", "Figure2-1.pdf"))
 ```
 
 
@@ -256,22 +283,22 @@ knitr::include_graphics(here("viz", "figures", "Figure2-1.pdf"))
 
 To examine the degree to which the main effects held across the different tonal languages studied, we first examined language-wise estimates derived from the mixed-effects model. These showed a high degree of consistency in main effects within each language group (Figure 3). For example, on the melodic discrimination task, `r mods$languages$stats$mdt$sig` of `r mods$languages$stats$mdt$n` tonal language groups had an estimated advantage over the non-tonal language average ($ps$ < 0.05); whereas `r mods$languages$stats$cabat$sig` of `r mods$languages$stats$cabat$n` had an estimated disadvantage on the beat perception task ($ps$ < 0.05).
 
+\clearpage
+
+\begin{sidewaysfigure}
+    \centering
+        \includegraphics{`r here("viz", "figures", "Figure4-1.pdf")`}
+    \caption{\textbf{Figure 3. The main effects are consistent across 19 tonal languages} The forest plot displays the estimated average performance for each individual language, after adjusting for the effect of music lessons, age, and gender. The solid points denote random-effect estimates for each language, derived from the mixed-effects models reported in Table 1 and Figure 3; the error bars denote 95\% confidence intervals; and the text annotations specify the languages and language-wise sample sizes (in brackets).}
+    \label{fig:Figure3}
+\end{sidewaysfigure}
+
+\clearpage
+
 We then tested whether speakers of tonal and non-tonal languages could be distinguished on the basis of only their music perception scores, using a linear discriminant function. To compensate for the multi-level structure of our data (scores nested within languages nested within language types), rather than a standard discriminant function analysis, we used a non-parametric permutational approach [@Mundry2007] and ran it on the subset of the participants who indicated having not received musical training and who were native speakers of languages with a sample size of at least 500. From this dataset, we drew nested random samples of 5 tonal languages and 5 non-tonal languages; for each of the sampled languages, we sampled 100 participant scores with replacement and shuffled the assignment of whether that participant was marked "tonal" or "non-tonal". We trained a linear discriminant function on 30% of that sample, balancing across languages, and then used the trained model to predict whether the remaining 70% of the held-out sample was marked "tonal" or "non-tonal", yielding a percentage-correct score. We repeated the process 10,000 times to construct the null distribution for each of the three music perception tasks (see Supplementary Figure 2). To estimate the actual classification performance, the same nested sampling process was repeated 100 times for non-shuffled data, from which we obtained the mean proportions of correct classification for each task. 
 
 The results robustly replicated the main findings. Speakers of tonal and non-tonal languages could be reliably distinguished on average for both melodic discrimination ($p$ `r permutation_tests$T_NT$mdt$p %>% fp`) and beat alignment ($p$ `r permutation_tests$T_NT$cabat$p %>% fp`) tasks, but not for the mistuning perception task ($p$ `r permutation_tests$T_NT$mpt$p %>% fp`), thus convergently supporting the reliability of our main results. 
 
-Last, we used the same linear discriminant analysis approach to compare pitch-accented to non-tonal language speakers (Supplementary Figure 3). Here, the approach failed to replicate the small advantage to pitch-accented language speakers on the beat alignment task ($p$ `r permutation_tests$PA_NT$cabat$p %>% fp`) identified by our mixed-effect modeling analysis (Table 2), but did find a small advantage for vocal mistuning ($p$ `r permutation_tests$PA_NT$mpt$p %>% fp`). We take this mixed result as cause to not interpret either effect for speakers of pitch-accented languages, given both the less clear theoretical basis for such an effect and the noted ambiguity of the pitch-accented language type [@Hyman2009].
-
-\newpage
-
-\begin{sidewaysfigure}
-    \centering
-        \includegraphics{`r here("viz", "figures", "FigureTest-1.pdf")`}
-    \caption{\textbf{Figure 3.} The main effects are consistent across 19 tonal languages. The forest plot displays the estimated average performance for each individual language, after adjusting for the effect of music lessons, age, and gender. The solid points denote random-effect estimates for each language, derived from the mixed-effects models reported in Table 2 and Figure 2; the error bars denote 95\% confidence intervals; and the text annotations specify the languages and language-wise sample sizes (in brackets).}
-    \label{fig:awesome_image}
-\end{sidewaysfigure}
-
-\pagebreak
+Last, we used the same linear discriminant analysis approach to compare pitch-accented to non-tonal language speakers. Here, the approach failed to replicate the small advantage to pitch-accented language speakers on the beat alignment task ($p$ `r permutation_tests$PA_NT$cabat$p %>% fp`) identified by our mixed-effect modeling analysis (Table 2), but did find a small advantage for vocal mistuning ($p$ `r permutation_tests$PA_NT$mpt$p %>% fp`). We take this mixed result as cause to not interpret either effect for speakers of pitch-accented languages, given both the less clear theoretical basis for such an effect and the noted ambiguity of the pitch-accented language type [@Hyman2009].
 
 ### Effects of tonal-language experience are not attributable to measured third variables
 
@@ -291,17 +318,17 @@ We found a clear link between linguistic experience and music processing abiliti
 
 Our results are likely to generalize, given that they held across thousands of native speakers of 19 tonal languages, and hundreds of thousands of native speakers of 29 non-tonal languages, each sampled from over 100 countries around the world. The tonal languages include not only East Asian languages (e.g., Mandarin, Cantonese) commonly examined by prior studies, but also Southeast Asian and African languages (e.g., Burmese, Igbo, Shona) that have rarely or never been studied in the context of music perception research. The non-tonal languages in our study include speakers of languages as diverse as Arabic, Catalan, Hindi, and Ukrainian; along with non-tonal languages from South/Southeast Asia, such as Indonesian, Tagalog, and Malay. Inclusion of these Asian languages constitute an especially strong test, since their speakers may be more likely to share cultural similarities to speakers of tonal languages in those regions, thereby helping to rule out cultural confounds.
 
-Our results also help clarify the previously mixed pattern of results concerning the effects of linguistic experience on music processing across different tasks and samples. For example, an advantage for tonal language speakers in melodic pattern processing is consistent with the majority of previous studies [@Alexander2008; @Bradley2016; @Choi2021; @Chen2016; @Swaminathan2021; @Wong2012], though not all of them [@Peretz2011; @Stevens2013; @Zheng2018]. Meanwhile, similar levels of performance on the fine-grained pitch task between tonal and non-tonal language speakers is supported by some prior studies [@Bent2006; @Bidelman2011a; @Stevens2013; @Tong2018; @Zheng2018] but not other studies that point to a tonal advantage/disadvantage on related tasks [@Bidelman2013; @Chang2016; @Giuliano2011; @Hutka2015; @Peretz2011; @Pfordresher2009]. Lastly, while rhythmic abilities in tonal language speakers have been less studied [see @Wong2012; @Zhang2020], a disadvantage in beat discrimination is consistent with recent work showing that tonal speakers give more weight to pitch cues than duration cues; this weighting cuts across auditory domains [@Jasmin2021]. By leveraging a consistent set of tasks and a large sample size, our results make clear that speaking a tonal language has a measurable connection to music perception ability — but not a uniform one, as this linguistic experience produces both positive and negative effects on perceptual abilities of different types.
+Our results also help clarify the previously mixed pattern of results concerning the effects of linguistic experience on music processing across different tasks and samples. For example, an advantage for tonal language speakers in melodic pattern processing is consistent with the majority of previous studies [@Alexander2008; @Bradley2016; @Choi2021; @Chen2016; @Swaminathan2021; @Wong2012], though not all of them [@Peretz2011; @Stevens2013; @Zheng2018]. Meanwhile, similar levels of performance on the fine-grained pitch task between tonal and non-tonal language speakers is supported by some prior studies [@Bent2006; @Bidelman2011a; @Stevens2013; @Tong2018; @Zheng2018] but not other studies that point to a tonal advantage/disadvantage on related tasks [@Bidelman2013; @Chang2016; @Giuliano2011; @Hutka2015; @Peretz2011; @Pfordresher2009]. Lastly, while rhythmic abilities in tonal language speakers have been less studied [@Wong2012; @Zhang2020], a disadvantage in beat discrimination is consistent with recent work showing that tonal speakers give more weight to pitch cues than duration cues; this weighting cuts across auditory domains [@Jasmin2021]. By leveraging a consistent set of tasks and a large sample size, our results make clear that speaking a tonal language has a measurable connection to music perception ability — but not a uniform one, as this linguistic experience produces both positive and negative effects on perceptual abilities of different types.
 
-Why might tonal language experience have these specific effects on music perception? The answer may lie in the shared mechanisms and neural processing resources associated with auditory perception, whether applied to language or music [@Patel2011; @Patel2008; @Kraus2010; @Asaridou2013; @Peretz2015; although see also @Asano2021; @Bidelman2013]. Both tonal languages and music rely on specialized pitch-based sound categories (tone contours or levels in speech; pitch motifs and melodies in music). If these categories are learned and processed through shared, domain-general mechanisms, then improving the efficiency of these mechanisms through practice in either domain should result in mutual improvements [@Asaridou2013 ;@Chang2016; @Delogu2006; @Delogu2010; @Patel2008; @McMullen2004]. But not all is shared. Music relies more on fine-grained pitch structure, even compared to tonal languages, as it is required to support the processing of pitch in the context of a tonal hierarchy [@Albouy2020; @Krumhansl2004; @Peretz2003; @Zatorre2002]. This may explain why tonal language experience did not have an effect on fine-grained pitch processing in music.
+Why might tonal language experience have these specific effects on music perception? The answer may lie in the shared mechanisms and neural processing resources associated with auditory perception, whether applied to language or music [@Patel2011; @Patel2008; @Kraus2010; @Asaridou2013; @Peretz2015; @Asano2021; @Bidelman2013]. Both tonal languages and music rely on specialized pitch-based sound categories (tone contours or levels in speech; pitch motifs and melodies in music). If these categories are learned and processed through shared, domain-general mechanisms, then improving the efficiency of these mechanisms through practice in either domain should result in mutual improvements [@Asaridou2013; @Chang2016; @Delogu2006; @Delogu2010; @Patel2008; @McMullen2004]. But not all is shared. Music relies more on fine-grained pitch structure, even compared to tonal languages, as it is required to support the processing of pitch in the context of a tonal hierarchy [@Albouy2020; @Krumhansl2004; @Peretz2003; @Zatorre2002]. This may explain why tonal language experience did not have an effect on fine-grained pitch processing in music.
 
 Our results do not explain, however, *how* these shared mechanisms might be improved by experience. One possibility is that language experience could shape domain-general perceptual strategies regarding inferences about high-level perceptual categories on the basis of low-level cues: acquired perceptual biases (i.e., from tonal language experience) may aid the processing of some stimuli while worsening the processing of others. In speech, listeners give more perceptual weight to cues that are more informative in discriminating contrasts that are salient in their native language [@Schertz2020; @Jasmin2021] and tonal language speakers rely more heavily on pitch to categorize and produce speech stress when acquiring a non-tonal L2 language compared to native speakers [@Wang2008; @Yu2010].
 
-Similarly, people with pitch perception deficits learn to compensate for their deficits by giving more weight to durational cues when decoding speech prosody [@Jasmin2020b; @Jasmin2020]. Recent evidence suggests that similar effects emerge in music perception: Mandarin speakers have difficulty *ignoring* pitch cues relative to English and Spanish speakers, who have been found to more frequently make decisions based on duration cues [@Jasmin2021]. In turn, this is consistent with theories of the overlapping mechanisms of basic auditory perception [@Patel2011; @Patel2012b; @Wong2007; @Tierney2013; @Peretz2015]. Our findings unite these results and show their generality.
+Similarly, people with pitch perception deficits learn to compensate for their deficits by giving more weight to durational cues when decoding speech prosody [@Jasmin2021; @Jasmin2020a]. Recent evidence suggests that similar effects emerge in music perception: Mandarin speakers have difficulty *ignoring* pitch cues relative to English and Spanish speakers, who have been found to more frequently make decisions based on duration cues [@Jasmin2021]. In turn, this is consistent with theories of the overlapping mechanisms of basic auditory perception [@Patel2011; @Patel2012b; @Wong2007; @Tierney2013; @Peretz2015]. Our findings unite these results and show their generality.
 
-While the scope of our data collection allowed for analysis of music processing abilities in thousands of native speakers of six pitch-accented languages, the findings concerning these speakers were murky and failed to replicate across different analysis approaches. Within-language group variability was also high (see Figure 2) for pitch-accented languages, suggesting no common group advantage/disadvantage across speakers of pitch-accented languages. This, of course, is complicated by the inherently fuzzier nature of classification of pitch-accented languages, relative to tonal languages [see Footnote 1\; @Gussenhoven2004; @Hyman2006; @Hyman2009]. Further work that codifies that nature of both linguistic and musical pitch use across this set of generally understudied languages may provide more clarity. We encourage interested readers to re-analyze the open-access data reported here, using alternative classifications of languages into the "pitch-accented" category.
+While the scope of our data collection allowed for analysis of music processing abilities in thousands of native speakers of six pitch-accented languages, the findings concerning these speakers were murky and failed to replicate across different analysis approaches. Within-language group variability was also high (see Figure 4) for pitch-accented languages, suggesting no common group advantage/disadvantage across speakers of pitch-accented languages. This, of course, is complicated by the inherently fuzzier nature of classification of pitch-accented languages, relative to tonal languages (see Footnote 1)[@Gussenhoven2004; @Hyman2006; @Hyman2009]. Further work that codifies that nature of both linguistic and musical pitch use across this set of generally understudied languages may provide more clarity. We encourage interested readers to re-analyze the open-access data reported here, using alternative classifications of languages into the "pitch-accented" category.
 
-We note several other limitations. First, while we accounted for how much musical training participants had, we did not measure how long they engaged with this training, its intensity, or its type. As a result, our estimates of the effect of musical training have greater uncertainty (although the analyses for participants with no musical training, which largely replicate the main effects, help to mitigate this concern). Second, participants only reported their first language, so we were unable to examine the effects of bilingualism or multilingualism [@Krizman2012; @Liu2017; @Liu2020], nor assess whether fluently speaking both tonal and non-tonal languages (e.g. Mandarin and English) might have contributed additional variability in our results. Third, there are a host of other unmeasured cultural, environmental, and genetic factors that surely affect musical abilities. Moreover, these likely interact with each other, complicating causal inferences from the observational data we collected [see, e.g., recent findings that genetics and musical experience both influence linguistic tone perception in Cantonese\; @Wong2020]. These and other limitations will be best addressed through a variety of methodologies, including more targeted smaller scale approaches (including fieldwork) that complement the broad web-based citizen science approach used here.
+We note several other limitations. First, while we accounted for how much musical training participants had, we did not measure how long they engaged with this training, its intensity, or its type. As a result, our estimates of the effect of musical training have greater uncertainty (although the analyses for participants with no musical training, which largely replicate the main effects, help to mitigate this concern). Second, participants only reported their first language, so we were unable to examine the effects of bilingualism or multilingualism [@Krizman2012; @Liu2017; @Liu2020], nor assess whether fluently speaking both tonal and non-tonal languages (e.g. Mandarin and English) might have contributed additional variability in our results. Third, there are a host of other unmeasured cultural, environmental, and genetic factors that surely affect musical abilities. Moreover, these likely interact with each other, complicating causal inferences from the observational data we collected (see, e.g., recent findings that genetics and musical experience both influence linguistic tone perception in Cantonese) [@Wong2020]. These and other limitations will be best addressed through a variety of methodologies, including more targeted smaller scale approaches (including fieldwork) that complement the broad web-based citizen science approach used here.
 
 In sum, our results show that across a range of geographic and demographic contexts, linguistic experience alters music perception ability in reliable (but not unitary) fashions. This implies that substantively different domains of auditory perception recruit at least some shared processing resources, which themselves are shaped by auditory experience.
 
@@ -309,16 +336,12 @@ In sum, our results show that across a range of geographic and demographic conte
 
 # End notes {-}
 
-## Supplemental information {-}
-
-The supplemental information includes 3 text sections, 7 tables and 3 figures.
-
 ## Data, code, and materials availability {-}
 
-A reproducible version of this manuscript, including all data and code, is available at <https://github.com/themusiclab/language-experience-music>. The preregistration is at <https://osf.io/xurdb>. Readers can try out the experiment at <https://themusiclab.org/quizzes/miq>; code for each of the three tasks is available at <https://github.com/pmcharrison/mpt>, <https://github.com/pmcharrison/mdt>, and <https://github.com/pmcharrison/cabat>.
+A reproducible version of this manuscript, including all data and code, is available at <https://github.com/themusiclab/language-experience-music>. Code in this repository automatically downloads the raw data, which can also be found separately on Zenodo at <https://doi.org/10.5281/zenodo.7614188>. The preregistration is at <https://osf.io/xurdb>.
 
 ## Acknowledgments {-}
-This research was supported by the Duke University Internship Funding Program (J.L.); the Harvard Data Science Initiative (S.A.M.); and the National Institutes of Health Director's Early Independence Award DP5OD024566 (S.A.M. and C.B.H.). We thank the participants; P. Harrison and D. Müllensiefen for sharing code and assisting with the implementation of their music perception tasks; T. Bent, G. Bidelman, E. Bradley, A. Bradlow, D. Chang, W. Choi, R. Giuliano, M. Hove, S. Hutka, M. Ngo, S. Nguyen, I. Peretz, P. Pfordresher, S. X. Tong, S. Swaminathan, Y. Wang, N. Wicha, and L. Zhang for providing supplementary data and/or associated information for the meta-analysis; J. Simson for technical and research assistance; and the members of The Music Lab for discussion and feedback on the citizen-science platform, the experiment, and the manuscript.
+This research was supported by the Duke Career Center Internship Funding Program for Undergraduate Students (J.L.); the Harvard Data Science Initiative (S.A.M.); the National Institutes of Health Director's Early Independence Award DP5OD024566 (S.A.M. and C.B.H.); the Royal Society of New Zealand Te Aparāngi Rutherford Discovery Fellowship RDF-UOA2103 (S.A.M); and the Royal Society of New Zealand Te Aparāngi Marsden Fund Standard Grant MFP-UOA2133 (C.B.H and S.A.M). We thank the participants; P. Harrison and D. Müllensiefen for sharing code and assisting with the implementation of their music perception tasks; T. Bent, G. Bidelman, E. Bradley, A. Bradlow, D. Chang, W. Choi, R. Giuliano, M. Hove, S. Hutka, M. Ngo, S. Nguyen, I. Peretz, P. Pfordresher, S. X. Tong, S. Swaminathan, Y. Wang, N. Wicha, and L. Zhang for providing supplementary data and/or associated information for the meta-analysis; J. Simson for technical and research assistance; the members of The Music Lab for discussion and feedback on the citizen-science platform, the experiment, and the manuscript; and three anonymous reviewers, whose constructive feedback shaped this paper substantially.
 
 ## Author contributions {-}
 - Conception: J.L. and S.A.M. 
@@ -339,7 +362,7 @@ This research was supported by the Duke University Internship Funding Program (J
 
 ## Selection criteria
 
-We included in the meta-analysis only studies that examined the pitch-processing ability of native tonal and non-tonal language speakers via behavioral measures. We searched for studies on Google Scholar using the terms *(tone language OR tonal language) AND (musical pitch perception)* and inspected the first 200 results. In addition, we conducted forward and backward cross-referencing of @Asaridou2013, a review article on the link between musical and linguistic pitch. In the identified studies, we excluded those that (1) focused exclusively on absolute pitch, amusia, categorical perception, or cross-modal abilities (e.g. identifying visual representations of musical intervals); (2) studied only musicians; and/or (3) recruited only children under the age of 8. Only studies that were published and written in English were included. In all but one case, the participants studied were native speakers of the tonal language in question. The tonal language group in @Swaminathan2021 contained some non-native speakers; that study's inclusion or exclusion from the meta-analyses did not substantively affect the estimates of meta-analytic effect sizes, however. Lastly, we excluded one study [@Chang2016] that had a standardized effect size over an order of magnitude above the average effect size. This anomaly was due to suspiciously low standard-deviations of participant-level scores, seemingly due to an accidental shift of a decimal place. We have contacted the authors for clarification.
+We included in the meta-analysis only studies that examined the pitch-processing ability of native tonal and non-tonal language speakers via behavioral measures. We searched for studies on Google Scholar using the terms *(tone language OR tonal language) AND (musical pitch perception)* and inspected the first 200 results. In addition, we conducted forward and backward cross-referencing of a review article on the link between musical and linguistic pitch @Asaridou2013. In the identified studies, we excluded those that (1) focused exclusively on absolute pitch, amusia, categorical perception, or cross-modal abilities (e.g. identifying visual representations of musical intervals); (2) studied only musicians; and/or (3) recruited only children under the age of 8. Only studies that were published and written in English were included. In all but one case, the participants studied were native speakers of the tonal language in question. One study @Swaminathan2021 had some non-native speakers in the tonal language group. However, that study's inclusion or exclusion from the meta-analyses did not substantively affect the estimates of meta-analytic effect sizes.
 
 ## Data processing and analysis
 
@@ -435,7 +458,7 @@ kable(TableS1, booktab = T, linesep = NULL, longtable = T, escape = F) %>%
                  position = "center") %>%
   column_spec(6, width = "12em")  %>% 
   footnote(general = "The languages studied here, with sample sizes, largest-sample-size country, and the source of the language classification. Abbreviations: WALS (The world atlas of language structures), LAPSyD (Lyon-Albuquerque phonological systems database). *WALS classified as simple tone.",
-           general_title = "Table S1.",
+           general_title = "Table S1. Detailed language sample information ",
            footnote_as_chunk = TRUE,
            title_format = "bold",
            escape = FALSE,
@@ -525,10 +548,12 @@ kable(TableS2, booktab = T, escape = F, linesep = NULL) %>%
            threeparttable = TRUE) 
 ```
 
+\clearpage
+
 ```{r TableS3}
 kable(
   Table_combined_income,
-  format = "latex", 
+  format = "latex",
   escape = FALSE,
   booktabs = TRUE,
   linesep = "",
@@ -536,12 +561,12 @@ kable(
   col.names = c(
     "Term", "$\\beta$", "$SE$", "$t$", "$\\beta$", "$SE$", "$t$", "$\\beta$", "$SE$", "$t$"
   )
-) %>% 
+) %>%
   add_header_above(c(" ", "Melodic Discrimination" = 3, "Mistuning Perception" = 3, "Beat Alignment" = 3)) %>%
-  kable_styling(position = "center", font_size = 7) %>% 
+  kable_styling(position = "center", font_size = 7) %>%
   row_spec(1, bold = T,  background = "#DCDCDC") %>%
-  footnote(general = "Fixed-effect output from random-effects model applied to each musical task controlling for participant annual income (Baseline = Income under 10,000) in the US sample with available income data. Language type effect remains after controlling for income in this group. Language is included as random-effects. ***$p < 0.001$, **$p < 0.01, *$p < 0.05.",
-           general_title = "Table S3.",
+  footnote(general = "Fixed-effect output from random-effects model applied to each musical task controlling for participant annual income (Baseline = Income under 10,000) in the US sample with available income data. Language type effect remains after controlling for income in this group. Language is included as random-effects. ***$p < 0.001$, **$p < 0.01$, *$p < 0.05$.",
+           general_title = "Table S3. Results replicate after adjusting for income, related to Table 2 ",
            footnote_as_chunk = TRUE,
            title_format = "bold",
            escape = FALSE,
@@ -553,7 +578,7 @@ kable(
 ```{r TableS4}
 kable(
   Table_combined_education,
-  format = "latex", 
+  format = "latex",
   escape = FALSE,
   booktabs = TRUE,
   linesep = "",
@@ -561,23 +586,24 @@ kable(
   col.names = c(
     "Term", "$\\beta$", "$SE$", "$t$", "$\\beta$", "$SE$", "$t$", "$\\beta$", "$SE$", "$t$"
   )
-) %>% 
+) %>%
   add_header_above(c(" ", "Melodic Discrimination" = 3, "Mistuning Perception" = 3, "Beat Alignment" = 3)) %>%
-  kable_styling(position = "center", font_size = 7) %>% 
+  kable_styling(position = "center", font_size = 7) %>%
   row_spec(1, bold = T,  background = "#DCDCDC") %>%
-  footnote(general = "Fixed-effect output from random-effects model applied to each musical task controlling for education (Baseline = Primary School) in the sample that reported their educational background. Language and country are included as random-effects. ***$p < 0.001$, **$p < 0.01, *$p < 0.05.",
-           general_title = "Table S4.",
+  footnote(general = "Fixed-effect output from random-effects model applied to each musical task controlling for education (Baseline = Primary School) in the sample that reported their educational background. Language and country are included as random-effects. ***$p < 0.001$, **$p < 0.01$, *$p < 0.05$.",
+           general_title = "Table S4. Results replicate after adjusting for education, related to Table 2 ",
            footnote_as_chunk = TRUE,
            title_format = "bold",
            escape = FALSE,
            threeparttable = TRUE)
 ```
 
+\clearpage
 
 ```{r TableS5}
 kable(
   Table_combined_culture,
-  format = "latex", 
+  format = "latex",
   escape = FALSE,
   booktabs = TRUE,
   linesep = "",
@@ -585,12 +611,12 @@ kable(
   col.names = c(
     "Term", "$\\beta$", "$SE$", "$t$", "$\\beta$", "$SE$", "$t$", "$\\beta$", "$SE$", "$t$"
   )
-) %>% 
+) %>%
   add_header_above(c(" ", "Melodic Discrimination" = 3, "Mistuning Perception" = 3, "Beat Alignment" = 3)) %>%
-  kable_styling(position = "center", font_size = 7.5) %>% 
+  kable_styling(position = "center", font_size = 7.5) %>%
   row_spec(1, bold = T,  background = "#DCDCDC") %>%
-  footnote(general = "Fixed-effect output from random-effects model applied to each musical task controlling for region (East vs West, baseline = East). Language and country were entered as random-effects. Only speakers of tonal and non-tonal languages from countries/regions China, Hong Kong, Taiwan, Thailand, Vietnman (East) and United States, United Kingdom, New Zealand, Canada, Australia (West) are included in this analysis. ***$p < 0.001$, **$p < 0.01, *$p < 0.05.",
-           general_title = "Table S5.",
+  footnote(general = "Fixed-effect output from random-effects model applied to each musical task controlling for region (East vs West, baseline = East). Language and country were entered as random-effects. Only speakers of tonal and non-tonal languages from countries/regions China, Hong Kong, Taiwan, Thailand, Vietnam (East) and United States, United Kingdom, New Zealand, Canada, Australia (West) are included in this analysis. ***$p < 0.001$, **$p < 0.01$, *$p < 0.05$.",
+           general_title = "Table S5. Results replicate after adjusting for world region, related to Table 2 ",
            footnote_as_chunk = TRUE,
            title_format = "bold",
            escape = FALSE,
@@ -600,49 +626,39 @@ kable(
 \clearpage
 
 ```{r TableS6}
-kable(TableS2B, format = "latex", booktabs = T, linesep = "", escape = F) %>%
-  kable_styling(position = "center",
-                font_size = 9)  %>% 
-  add_indent(positions = c(2,3,5,6,8,9,11,12))  %>% 
-  footnote(general = "Summary of main results from linear regressions in the confirmatory sample, repeated across the four analysis approaches (*p < 0.05, ***p < 0.001).",
-           general_title = "Table S6A.",
-           footnote_as_chunk = TRUE,
-           title_format = "bold",
-           escape = FALSE,
-           threeparttable = TRUE)
-```
 
-```{r}
-knitr::kable(TableS5B, booktabs = T, linesep = NULL, escape = F) %>%
-  kable_styling(position = "center",
-                font_size = 9)  %>% 
-  add_indent(positions = c(2,3,5,6,8,9,11,12))  %>% 
-  footnote(general =  "Beta coefficients from linear regression models for different analysis approaches in the exploratory sample (*p < 0.05, ***p < 0.001).",
-           general_title = "Table S6B.",
-           footnote_as_chunk = TRUE,
-           title_format = "bold",
-           escape = FALSE,
-           threeparttable = TRUE)
+bind_rows(TableS5B, TableS2B) |> 
+  bind_cols(Data = c("Exploratory", rep("", 11), "Confirmatory", rep("", 11))) |> 
+  relocate(Data, .before = 1) |> 
+  kable(format = "latex", booktabs = T, linesep = "", escape = F) %>%
+ kable_styling(position = "center",
+               font_size = 9)  %>%
+ add_indent(positions = c(2,3,5,6,8,9,11,12, 14, 15, 17, 18, 20, 21, 23, 24))  %>%
+ footnote(general = "Summary of main results from linear regressions, repeated across the four analysis approaches for adjusting for covariate imbalance. The Data column indicates whether the exploratory or confirmatory sample was used for each analysis. ***$p < 0.001$, *$p < 0.05$.",
+          general_title = "Table S6. Results replicate across four covariate adjustment approaches in both exploratory and confirmatory samples",
+          footnote_as_chunk = TRUE,
+          title_format = "bold",
+          escape = FALSE,
+          threeparttable = TRUE)
+
 ```
 
 
 \clearpage
 ```{r FigureS1}
-#| fig.cap = "\\textbf{Figure S1.} Scores on the headphone detection task, from participants who self-reported that they were wearing headphones. The maximum score was 6; the dashed red line indicates the mean score."
+#| fig.cap = "\\textbf{Figure S1. Participants who reported wearing headphones performed well on a headphone detection task} Scores on the headphone detection task, from participants who self-reported that they were wearing headphones. The maximum score was 6; the dashed red line indicates the mean score."
 knitr::include_graphics(here("viz", "figures", "FigureS1-1.pdf"))
-```
-
-
-```{r FigureS2}
-#| fig.cap = "\\textbf{Figure S2.} To test whether speakers of tonal and non-tonal languages could be distinguished on the basis of their music perception scores, we ran a permuted Discriminant Function Analysis (pDFA). The three histograms show the null distributions for each music perception task, representing the ability to discriminate 'tonal' from 'non-tonal' when these labels have been randomly shuffled, resulting from 10,000 permutations. The dotted vertical line then represents the actual discrimination performance on non-shuffled data. And the p-value is computed as a approximate test from this null distribution and actual score. "
-knitr::include_graphics(here("viz", "figures", "FigureS2-1.pdf"))
-```
-
-```{r FigureS3}
-#| fig.cap = "\\textbf{Figure S3.} To test whether speakers of pitch-accented and non-tonal languages could be distinguished on the basis of their music perception scores, we ran a permuted Discriminant Function Analysis (pDFA). The three histograms show the null distributions for each music perception task, representing the ability to discriminate 'tonal' from 'non-tonal' when these labels have been randomly shuffled, resulting from 10,000 permutations. The dotted vertical line then represents the actual discrimination performance on non-shuffled data. And the p-value is computed as a approximate test from this null distribution and actual score. "
-knitr::include_graphics(here("viz", "figures", "FigureS3-1.pdf"))
 ```
 
 \clearpage
 
+```{r FigureS2}
+#| fig.cap = "\\textbf{Figure S2. Replication of the main effects using a discriminant function analysis}  To test whether speakers of different language types could be distinguished on the basis of their music perception scores, we ran a permuted Discriminant Function Analysis (pDFA). The three histograms show the null distributions for each music perception task, representing when language-type labels have been randomly shuffled, resulting from 10,000 permutations. The dotted vertical line then represents the actual discrimination performance on non-shuffled data. And the p-value is computed as a approximate test from this null distribution and actual score. This procedure was repeated for participants who indicated as having not received music lessons for both (A) tonal versus non-tonal speakers, and (B) pitch-accent versus non-tonal speakers. "
+knitr::include_graphics(here("viz", "figures", "FigureS2-1.pdf"))
+```
+
+
+\clearpage
+
 # References {-}
+

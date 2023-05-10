@@ -42,7 +42,7 @@ p_load(
 color_scheme <- c("#85C0F9", "#A95AA1", "#F5793A")
 
 # save figure outputs here
-knitr::opts_chunk$set(fig.path = here("viz", "figures", ""))
+knitr::opts_chunk$set(fig.path = here("viz", "figures", ""), dpi = 500)
 
 load(here("results", "analyses.RData"))
 load(here("results", "meta_analyses.RData"))
@@ -52,7 +52,7 @@ miq_combined_filtered <- read.csv(here("data", "Combined", "Combined_filtered.cs
 ```
 
 
-```{r Figure1, fig.width = 12, fig.height = 6}
+```{r Figure2, fig.width = 12, fig.height = 6}
 
 size_dat <- miq_combined_filtered %>%
   count(language) %>%
@@ -149,21 +149,13 @@ p2 <- size_dat %>%
     legend.position = "none"
   )
 
-# layout <- "
-# AAA#
-# AAAB
-# AAA#
-# "
-# 
-# p1 + p2 +
-#   plot_layout(design = layout)
-
 
 p1 + inset_element(p2, left = 1.01, bottom = 0.3, right = 1.35, top = .9)
 
+
 ```
 
-```{r Figure2, fig.width = 10, fig.height = 4}
+```{r Figure3, fig.width = 10, fig.height = 4}
 
 test <- mods$total_mix_full$mdt$marginal %>% 
   bind_rows(., mods$total_mix_full$mpt$marginal) %>% 
@@ -186,7 +178,7 @@ mods$total_mix_full$mdt$marginal %>%
                      labels = c("Without Music Lessons", "With Music Lessons")) +
   geom_point(aes(y = predicted_Yes), position = position_dodge(.5), size = 2, alpha = .5, pch = 17) +
   geom_linerange(aes(ymax = predicted_Yes, ymin = predicted_No, color = tone), position = position_dodge(.5), linetype = "dashed", alpha = .5) +
-  scale_x_discrete(labels = c("Melodic Disrimination","Mistuning Perception", "Beat Alignment"), position = "top") +
+  scale_x_discrete(labels = c("Melodic Discrimination","Mistuning Perception", "Beat Alignment"), position = "top") +
   scale_color_manual(values=color_scheme, labels = c("Non-tonal","Pitch-accented","Tonal")) +
   guides(shape = guide_legend(override.aes = list(alpha = .8, size = 4))) +
   theme_minimal() +
@@ -205,171 +197,7 @@ mods$total_mix_full$mdt$marginal %>%
 ```
 
 
-```{r Figure3, fig.width = 10, fig.height = 6}
-
-lang_plotter <- function(data, x_lab, y_lab = NULL) {
-  ggplot(data, aes(x = estimate, y = language, xmin = conf.low, xmax = conf.high, colour = Tone)) +
-    geom_vline(xintercept = 0, lty = "dashed", colour = "grey50") + 
-    geom_point(size = 0.8) +
-    geom_errorbar(size = 0.4) +
-    scale_colour_manual(values = c("#85C0F9", "#A95AA1", "#F5793A"),
-                        labels = c("Non-tonal","Pitch-accented", "Tonal"),
-                        name = NULL) +
-    lims(x = c(-0.8,0.8)) +
-    labs(
-      x = NULL,
-      y = y_lab, 
-      title = x_lab
-    ) +
-    theme_minimal() +
-    theme(axis.text.y= element_blank(),
-          axis.title = element_text(size = 16),
-          axis.ticks.y = element_blank(),
-          legend.text = element_text(size = 12),
-          panel.grid = element_blank()
-    ) 
-}
-
-lang_plotter(mods$languages$mdt, "Melodic Discrimination", "Language") + 
-lang_plotter(mods$languages$mpt, "Mistuning Perception") + 
-lang_plotter(mods$languages$cabat, "Beat Alignment") +
-  plot_layout(guides = "collect") & 
-  theme(legend.position = "bottom",
-        plot.title = element_text(hjust = .5, size = 16))
-
-```
-
-```{r OLD-Figure4, fig.width = 10, fig.height = 6, eval=FALSE, include=FALSE}
-
-lang_plotter <- function(data_x, x_lab, y_lab) {
-  ggplot(data = confirm_plot_data %>%
-           filter(musicLessons == "No")) +
-    geom_boxplot(aes(y = reorder(language, {{data_x}}, median), x = {{data_x}},
-                     fill = factor(Tone, levels = c("Non-tonal","Pitch-accented", "Tonal"))), outlier.shape=NA) +
-    scale_fill_manual(values=c("#85C0F9", "#A95AA1", "#F5793A"),
-                      labels = c("Non-tonal","Pitch-accented", "Tonal"),
-                      name = NULL) +
-    geom_hline(yintercept = miq_confirm_filtered %>% group_by(country) %>% summarise(avg = mean(mdt)) %>% pull(avg) %>% median(),
-               linetype = "dotted", color = "black") +
-    lims(x = c(-3,3)) +
-    labs(x = NULL,
-         y = y_lab, 
-         title = x_lab) +
-    theme_minimal() +
-    theme(axis.text.y= element_blank(),
-          axis.title = element_text(size = 16),
-          axis.ticks.y = element_blank(),
-          legend.text = element_text(size = 12),
-          panel.grid = element_blank()
-    ) 
-}
-
-lang_plotter(mdt, "Melodic Discrimination", "Languages ranked by median score") +
-  lang_plotter(mpt, "Mistuning Perception", NULL) +
-  lang_plotter(cabat, "Beat Alignment", NULL) + 
-  plot_layout(guides = "collect") & 
-  theme(legend.position = "bottom",
-        plot.title = element_text(hjust = .5, size = 16))
-
-```
-
-
-
-```{r New-SI-Figure1, fig.width = 12, fig.height = 7}
-
-size_dat <- miq_confirm_filtered %>%
-  count(language) %>%
-  mutate(
-    language = case_when(
-      language == "Chinese/Mandarin" ~ "Mandarin",
-      language == "Chinese/Cantonese/Yue" ~ "Cantonese",
-      language == "Chinese/Taiwanese/Min Nan/Hokkien" ~ "Hokkien",
-      TRUE ~ language
-    )
-  ) %>%
-  select(language, confirmatory = n) %>%
-  full_join(., languages %>%
-              mutate(
-                language = case_when(
-                  language == "Chinese/Mandarin" ~ "Mandarin",
-                  language == "Chinese/Cantonese/Yue" ~ "Cantonese",
-                  language == "Chinese/Taiwanese/Min Nan/Hokkien" ~ "Hokkien",
-                  TRUE ~ language
-                )
-              ))
-
-set.seed(10)
-
-ggplot(size_dat) +
-  theme_apa() +
-  geom_text_repel(
-    aes(
-      label = language,
-      x = Tone,
-      y = confirmatory,
-      color = Tone,
-      size = confirmatory
-    ),
-    min.segment.length = 999, # removing segments
-    position = position_jitter(width = 0.3)
-  ) +
-  scale_color_manual(values=color_scheme)+
-  scale_y_log10(labels = comma) +
-  scale_x_discrete(labels = c(
-    "<i style='color:#85C0F9;'>Non-tonal</i>",
-    "<i style='color:#A95AA1;'>Pitch-accented</i>",
-    "<i style='color:#F5793A;'>Tonal</i>"),
-    name = NULL) +
-  scale_size(range = c(4, 20), name = "Sample Size") +
-  theme(
-    axis.title.y = element_text(size = 20),
-    axis.text.x = element_markdown(size = 16, face = "bold"),
-    axis.text.y = element_text(size = 16),
-    legend.position = "none"
-  ) +
-  labs(y = "Sample Size", x = "Language Type", color = "Language Type")
-
-```
-
-
-```{r FigureStemp, fig.width=10, fig.height = 4}
-
-plot <- fig3_data %>%
-  ggplot() +
-  geom_abline(intercept = 0, slope = 1, alpha = 1, size = .3) +
-  geom_point(aes(x = exploratory, y = confirmatory, color = Tone),
-             alpha = 0.8, size = 2) +
-  facet_wrap(
-    ~ factor(test, levels = c("mdt", "mpt", "cabat")), 
-    labeller = labeller(.rows = c("mdt" = "Melodic Discrimination", "mpt" = "Mistuning Perception", "cabat" = "Beat Alignment"))
-  ) +
-  geom_hline(yintercept = 0, lty = "dotted", alpha = .6) +
-  geom_vline(xintercept = 0, lty = "dotted", alpha = .6) +
-  theme_minimal() +
-  theme(legend.title = element_blank(),
-        legend.position = "bottom",
-        aspect.ratio = 1,
-        strip.text = element_text(size = 16),
-        panel.spacing = unit(2, "lines"),
-        legend.text = element_text(size = 12)) +
-  lims(x = c(-.4, 1), y = c(-.4, 1)) +
-  labs(x = "Exploratory mean score",
-       y = "Confirmatory mean score")+
-  scale_color_manual(values=c("#85C0F9", "#A95AA1", "#F5793A"), labels = c("Non-tonal","Pitch-accented", "Tonal"))
-
-# extra custom code to deal with clipping in facet labels...
-fixed_plot <- ggplotGrob(plot)
-
-for(i in which(grepl("strip-t", fixed_plot$layout$name))){
-  fixed_plot$grobs[[i]]$layout$clip <- "off"
-}
-
-grid::grid.draw(fixed_plot)
-
-```
-
-
-```{r FigureS1a, fig.width = 7, fig.height = 8, include=FALSE}
+```{r Figure4, fig.width = 21.2, fig.height = 15, out.extra='angle=90', out.width="100%", out.height="100%"}
 
 lang_counts <- miq_combined_filtered |> count(language)
 
@@ -406,8 +234,8 @@ format_language_label <- function(data, add_count = FALSE) {
   data <- data |> 
     mutate(level_clean = case_when(
       level == "Chinese/Mandarin" ~ "Mandarin",
-      level == "Chinese/Cantonese/Yue" ~ "Yue",
-      level == "Chinese/Other dialects" ~ "Other Chinese languages",
+      level == "Chinese/Cantonese/Yue" ~ "Cantonese",
+      level == "Chinese/Other languages" ~ "Other Chinese languages",
       level == "Chinese/Taiwanese/Min Nan/Hokkien" ~ "Hokkien",
       TRUE ~ level
     ))
@@ -425,26 +253,8 @@ format_language_label <- function(data, add_count = FALSE) {
 }
 
 p1 <- lang_plotter2(format_language_label(mods$languages$mdt, TRUE), "Melodic Discrimination")
-
-```
-
-\clearpage
-```{r FigureS1b, fig.width = 7, fig.height = 8, include=FALSE}
-
 p2 <- lang_plotter2(format_language_label(mods$languages$mpt, TRUE), "Mistuning Perception")
-
-```
-
-\clearpage
-```{r FigureS1c, fig.width = 7, fig.height = 8, include=FALSE}
-
 p3 <- lang_plotter2(format_language_label(mods$languages$cabat, TRUE), "Beat Alignment")
-
-```
-
-
-\newpage
-```{r figureTest, fig.width = 21.2, fig.height = 15, out.extra='angle=90', out.width="100%", out.height="100%"}
 
 p1+p2+p3 +
   plot_layout(guides = "collect") &
@@ -452,14 +262,21 @@ p1+p2+p3 +
 
 ```
 
+
 \clearpage
-```{r FigureS1, fig.height=3, eval=FALSE}
+```{r FigureS1, fig.height=3, fig.width=6}
+headphone_score <- read.csv(here("data", "headphone_score.csv"))
 
 ggplot(headphone_score) +
-  geom_bar(aes(score)) +
-  theme_light() +
-  geom_vline(aes(xintercept = mean(headphone_score$score)), color = "red", linetype = "longdash", size = 1.5) +
-  labs(x = "Headphone Test Score")
+  geom_bar(aes(score), colour = "black", fill = "grey20") +
+  scale_y_continuous(labels = comma) +
+  scale_x_continuous(labels = 0:6, breaks = 0:6) +
+  geom_vline(aes(xintercept = mean(score)), color = "red", linetype = "longdash", size = 1.5) +
+  labs(
+    y = "Participant Count",
+    x = "Headphone Test Score"
+  ) +
+  theme_minimal()
 
 ```
 
@@ -603,12 +420,12 @@ clean_data_for_table <- function(meta_data, dataname, add_rows = FALSE) {
       across(c(lower, upper), r2, .names = "{.col}_clean"),
       `95% CI` = str_c("[", lower_clean, ", ", upper_clean, "]"),
       Estimate = str_c(Estimate, " ", `95% CI`),
-      overall = meta_data$TE.fixed,
+      overall = meta_data$TE.random,
       Weight = scales::percent(weights(meta_data)$p.random, scale = 1, accuracy = 1L),
       Study = str_remove_all(Study, "\\\\") # remove escape characters
     ) |>
     arrange(desc(TE)) |> 
-    bind_rows(tibble(TE = meta_data$TE.fixed, Study = "Overall")) |> 
+    bind_rows(tibble(TE = meta_data$TE.random, Study = "Overall")) |> 
     # add a couple blank rows at the end
     mutate(dataname = dataname)
   
@@ -665,7 +482,7 @@ meta_fig_assembler <- function(meta_data, dataname, filename, left_offset = 0, r
 
 meta_plotter_combined <- function(data) {
   dat <- data |> 
-    group_by(Study) |> 
+    group_by(Study) |>
     mutate(Study = str_c(Study, row_number())) |>
     ungroup() |> 
     mutate(
@@ -692,9 +509,9 @@ meta_plotter_combined <- function(data) {
     annotate("segment", x = pitch_effect, xend = pitch_effect, y = 11.5, yend = 31.5, lty = "dotted") +
     annotate("segment", x = rhythm_effect, xend = rhythm_effect, y = 1.5, yend = 8.5, lty = "dotted") +
     # add text annotation for the fixed effects
-    annotate("text", x = melodic_effect + 0.55, xend = melodic_effect + 0.55, y = 34, yend = 34, label = r2(melodic_effect)) +
-    annotate("text", x = pitch_effect + 0.55, xend = pitch_effect + 0.55, y = 11, yend = 11, label = r2(pitch_effect)) +
-    annotate("text", x = rhythm_effect + 0.6, xend = rhythm_effect + 0.6, y = 1, yend = 1, label = r2(rhythm_effect)) +
+    annotate("text", x = melodic_effect + 0.67, xend = melodic_effect + 0.67, y = 35, yend = 35, label = r2(melodic_effect)) +
+    annotate("text", x = pitch_effect + 0.67, xend = pitch_effect + 0.67, y = 11, yend = 11, label = r2(pitch_effect)) +
+    annotate("text", x = rhythm_effect + 0.72, xend = rhythm_effect + 0.72, y = 1, yend = 1, label = r2(rhythm_effect)) +
     geom_vline(xintercept = 0) +
     geom_point() +
     geom_errorbar(size = 0.6) +
@@ -702,7 +519,7 @@ meta_plotter_combined <- function(data) {
     scale_discrete_manual(aesthetics = "stroke", values = c(0.8, 1.5)) +
     scale_shape_manual(values = c(19,5)) +
     scale_size_manual(values = c(2, 5)) +
-    coord_cartesian(ylim = c(1.75, 45)) +
+    coord_cartesian(ylim = c(1.75, 46)) +
     theme_classic() + 
     theme(
       legend.position = "none",
@@ -746,7 +563,7 @@ meta_fig_assembler2 <- function(meta_data1, meta_data2, meta_data3, filename,
                       bottom_offset = bottom_offset,
                       left_offset = left_offset,
                       right_offset = right_offset,
-                      file_path = here::here("viz", "temp", filename))
+                      file_path = here::here("viz", "figures", filename))
 }
 
 ```
@@ -793,7 +610,9 @@ melodic.gen.random$clean <- melodic.gen.random$data |>
   )
 
 # meta_fig_assembler(melodic.gen.random, "melodic", "melodic_meta-plot.png", top_offset = 0.005, bottom_offset = -0.035, right_offset = -0.015)
+```
 
+```{r}
 # MPT
 pitch.gen.random$clean <- pitch.gen.random$data |>
   mutate( 
@@ -802,8 +621,10 @@ pitch.gen.random$clean <- pitch.gen.random$data |>
   ) |> 
   mutate(
     Study = case_when(
-      `Non-tonal` == "11 (Portuguese, 1)" ~ "Pfordresher & Brown (2009), Study 2",
-      `Non-tonal` == "17 (No)" && Study == "Giuliano et al. (2011)" ~ "Giuliano et al. (2011), Study 1",
+      `Non-tonal` == "11 (Portuguese, 1)" & Measure == "Interval discrimination" ~ "Pfordresher \\& Brown (2009), Study 2",
+      `Non-tonal` == "11 (Portuguese, 1)" & Measure == "Note discrimination" ~ "Pfordresher \\& Brown (2009), Study 2",
+      Study == "Pfordresher \\& Brown (2009)" & Measure == "Interval discrimination" ~ "Pfordresher \\& Brown (2009), Study 1",
+      Study == "Pfordresher \\& Brown (2009)" ~ "Pfordresher \\& Brown (2009), Study 1",
       `Non-tonal` == "5 (No)" ~ "Bidelman et al. (2011), Study 2",
       Measure == "Mistuning detection (Study2)" ~ "Wong et al. (2012), Study 2",
       Measure == "Mistuned detection (Study1)" ~ "Wong et al. (2012), Study 1",
@@ -820,10 +641,10 @@ pitch.gen.random$clean <- pitch.gen.random$data |>
     Tonal = case_when(
       Study == "Peretz et al. (2011)" ~ "18 Mandarin; 4 Vietnamese; 2 Cantonese",
       Study == "Tong et al. (2018)" ~ "15 Cantonese",
-      Study == "Pfordresher \\& Brown (2009)" ~ "6 Vietnamese; 4 Mandarin; 2 Cantonese",
+      Study == "Pfordresher \\& Brown (2009), Study 1" ~ "6 Vietnamese; 4 Mandarin; 2 Cantonese",
       Study == "Pfordresher & Brown (2009), Study 2" ~ "11 Mandarin",
       Study == "Wong et al. (2012), Study 1" ~ "408 Cantonese",
-      Study == "Wong et al. (2012), Study 2" ~ "408 Cantonese",
+      Study == "Wong et al. (2012), Study 2" ~ "22 Cantonese",
       Study == "Zheng \\& Samuel (2018)" ~ "24 Mandarin",
       Study == "Jasmin et al. (2021)" ~ "31 Cantonese",
       Study == "Giuliano et al. (2011), Study 1" ~ "17 Mandarin",
@@ -835,15 +656,15 @@ pitch.gen.random$clean <- pitch.gen.random$data |>
       Study == "Hutka et al. (2015)" ~ "18 Cantonese",
       Study == "Bidelman et al. (2011), Study 2" ~ "5 Mandarin",
       Study == "Bidelman et al. (2013)" ~ "18 Cantonese",
-      TRUE ~ Tonal
+      TRUE ~ paste0(Tonal_N, " ", Tonal_language)
     ),
     `Non-tonal` = case_when(
       Study == "Peretz et al. (2011)" ~ "25 'non-tonal' (likely French/English)",
       Study == "Tong et al. (2018)" ~ "15 English",
       Study == "Pfordresher \\& Brown (2009)" ~ "12 English",
-      Study == "Pfordresher & Brown (2009), Study 2" ~ "10 English; 1 Portuguese",
+      Study == "Pfordresher \\& Brown (2009), Study 2" ~ "10 English; 1 Portuguese",
       Study == "Wong et al. (2012), Study 1" ~ "154 English/French",
-      Study == "Wong et al. (2012), Study 2" ~ "154 English/French",
+      Study == "Wong et al. (2012), Study 2" ~ "26 English/French",
       Study == "Jasmin et al. (2021)" ~ "36 English; 26 Spanish",
       Study == "Zheng \\& Samuel (2018)" ~ "24 English, 24 Korean",
       Study == "Giuliano et al. (2011), study 1" ~ "16 'Non-tonal'",
@@ -855,7 +676,7 @@ pitch.gen.random$clean <- pitch.gen.random$data |>
       Study == "Hutka et al. (2015)" ~ "21 English",
       Study == "Bidelman et al. (2011), Study 2" ~ "5 English",
       Study == "Bidelman et al. (2013)" ~ "18 English",
-      TRUE ~ `Non-tonal`
+      TRUE ~ paste0(Non_tonal_N, " ", Comparison_language)
     )
   )
 
@@ -863,7 +684,9 @@ pitch.gen.random$clean <- pitch.gen.random$data |>
 pitch.gen.random$studlab <- str_c(pitch.gen.random$studlab, 1:length(pitch.gen.random$studlab))
 
 # meta_fig_assembler(pitch.gen.random, "pitch", "fine-pitch_meta-plot.png", top_offset = 0.028, bottom_offset = -0.016, right_offset = -0.015)
+```
 
+```{r}
 # Beat processing
 # MPT
 rhythm.gen.random$clean <- rhythm.gen.random$data |>
@@ -908,20 +731,20 @@ rhythm.gen.random$clean <- rhythm.gen.random$data |>
 
 
 \clearpage
-```{r meta-analysis, fig.height=4, fig.width=18, out.extra='angle=90'}
+```{r Figure1, fig.height=4, fig.width=18, out.extra='angle=90'}
 
 
 meta_fig_assembler2(melodic.gen.random, pitch.gen.random, rhythm.gen.random,
-                    "mega_meta-plot.pdf", top_offset = 0.072, bottom_offset = -0.02, right_offset = -0.015)
+                    "meta-plot.pdf", top_offset = 0.07, bottom_offset = -0.02, right_offset = -0.015)
 
 ```
 
 
 \clearpage
 
-```{r FigureS2, fig.height=4, fig.width=12}
+```{r FigureS2, fig.height=8, fig.width=12}
 
-permutation_plot <- function(data, title, fill_col) {
+permutation_plot <- function(data, subtitle, fill_col, title = NULL) {
   ggplot(tibble(x = data$null), aes(x)) + 
     geom_histogram(colour = "black", fill = colorspace::lighten(fill_col, 0.9)) + 
     geom_vline(xintercept = data$actual, lty = "dotted", colour = "red") +
@@ -929,33 +752,28 @@ permutation_plot <- function(data, title, fill_col) {
     labs(
       y = NULL,
       x = "Classification Accuracy",
-      title = title
+      title = title,
+      subtitle = subtitle
       ) +
     coord_cartesian(clip = "off") +
     theme_classic() + 
     theme(
-      plot.title = element_text(hjust = 0.5),
+      plot.title = element_text(hjust = 0.5, size = 15),
+      plot.subtitle = element_text(hjust = 0.5),
       axis.line.y = element_blank(),
       axis.ticks.y = element_blank(),
       axis.text.y = element_blank()
     )
 }
 
-permutation_plot(permutation_tests$T_NT$mdt, "Melodic discrimination", "yellow") + 
-  permutation_plot(permutation_tests$T_NT$mpt, "Mistuning discrimination", "yellow") +
-  permutation_plot(permutation_tests$T_NT$cabat, "Beat alignment", "yellow") + 
-  plot_annotation(title = "Tonal vs Non-tonal speakers", theme = theme(plot.title = element_text(hjust = 0.5, size = 18)))
-
-
-```
-
-
-```{r FigureS3, fig.height=4, fig.width=12}
-
-permutation_plot(permutation_tests$PA_NT$mdt, "Melodic discrimination", "blue") + 
-  permutation_plot(permutation_tests$PA_NT$mpt, "Mistuning discrimination", "blue") + 
-  permutation_plot(permutation_tests$PA_NT$cabat, "Beat alignment", "blue") + 
-  plot_annotation(title = "Pitch-accent vs Non-tonal speakers", theme = theme(plot.title = element_text(hjust = 0.5, size = 18)))
+wrap_plots(
+  permutation_plot(permutation_tests$T_NT$mdt, "Melodic discrimination", "yellow"),
+  permutation_plot(permutation_tests$T_NT$mpt, "Mistuning discrimination", "yellow", "Tonal vs non-tonal speakers"),
+  permutation_plot(permutation_tests$T_NT$cabat, "Beat alignment", "yellow"),
+  permutation_plot(permutation_tests$PA_NT$mdt, "Melodic discrimination", "blue"),
+  permutation_plot(permutation_tests$PA_NT$mpt, "Mistuning discrimination", "blue", "Pitch-accent vs non-tonal speakers"),
+  permutation_plot(permutation_tests$PA_NT$cabat, "Beat alignment", "blue"),
+  ncol = 3
+)
 
 ```
-
