@@ -44,3 +44,5 @@ After you have done this, to render the paper, run the code in `/writing/manuscr
 ### Visualizations
 
 Visualization code is in `/viz`, along with images and static data used for non-dynamic visualizations. The `/viz/figures` subdirectory contains static images produced by `figures.Rmd`, which can be regenerated with a `full_run` of `manuscript.Rmd`.
+
+[![DOI](https://zenodo.org/badge/394695004.svg)](https://zenodo.org/doi/10.5281/zenodo.11218599)
