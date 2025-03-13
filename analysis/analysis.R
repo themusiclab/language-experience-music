@@ -161,7 +161,7 @@ mods$total_mix_full <- map_miq(~ compute_models(miq_combined_filtered, .x, "lmer
 extract_language_estimates <- function(mod_x) {
   fixed <- mod_x %>% tidy() %>% 
     filter(effect == "fixed",
-           term %in% c("(Intercept)", "TonePitch-accented", "ToneTonal")) %>% 
+           term %in% c("ToneNon-tonal", "TonePitch-accented", "ToneTonal")) %>% 
     select(term, fixed_effect = estimate) %>%
     mutate(Tone = c("Non-tonal", "Pitch-accented", "Tonal"))
   
@@ -183,7 +183,7 @@ extract_language_estimates <- function(mod_x) {
 }
 
 run_mod <- function(term) {
-  x <- reformulate("Tone*musicLessons + age + gender + (1|country) + (1|language)", response = term)
+  x <- reformulate("0 + Tone*musicLessons + age + gender + (1|country) + (1|language)", response = term)
   mod <- lmer(x, miq_combined_filtered)
   output <- extract_language_estimates(mod)
   return(output)

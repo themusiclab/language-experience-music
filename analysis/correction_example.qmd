@@ -1,0 +1,225 @@
+---
+title: "correction_example"
+format: pdf
+---
+
+```{r echo = FALSE, warning=FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message = FALSE)
+```
+
+
+```{r}
+
+library(tidyverse)
+library(here)
+library(lmerTest)
+library(broom.mixed)
+library(conflicted)
+library(patchwork)
+
+conflict_prefer("select", "dplyr")
+conflict_prefer("filter", "dplyr")
+conflict_prefer("lmer", "lmerTest")
+
+```
+
+
+```{r load-data}
+
+miq_combined_filtered <- read.csv(here("data", "Combined", "Combined_filtered.csv"))
+languages <- read.csv(here("data", "language.csv"))
+color_scheme <- c("#85C0F9", "#A95AA1", "#F5793A")
+
+```
+
+```{r original-error, fig.width = 21.2, fig.height = 15}
+#| fig.cap = "Original figure 4."
+
+map_miq <- partial(map, .x = c("mdt", "mpt", "cabat") %>% set_names)
+
+mods_old <- list()
+
+extract_language_estimates <- function(mod_x) {
+  fixed <- mod_x %>% tidy() %>% 
+    filter(effect == "fixed",
+           term %in% c("(Intercept)", "TonePitch-accented", "ToneTonal")) %>% 
+    select(term, fixed_effect = estimate) %>%
+    mutate(Tone = c("Non-tonal", "Pitch-accented", "Tonal"))
+  
+  # this adjusts the fixed-effect estimates so that non-tonal is a reference of 0
+  fixed <- fixed %>%
+    mutate(adj_fixed = fixed_effect - fixed %>% filter(Tone == "Non-tonal") %>% pull(fixed_effect))
+  
+  random <- tidy(mod_x, effects = "ran_vals", conf.int = TRUE, conf.level = 0.95) %>%
+    filter(group == "language") %>%
+    left_join(., languages %>% select(language, Tone), by = c("level" = "language")) %>%
+    mutate(Tone = ifelse(is.na(Tone), "Tonal", Tone))
+  
+  combined <- left_join(random, fixed %>% select(-term), by = "Tone") %>%
+    mutate(
+      across(c(estimate, conf.low, conf.high), ~ .x + adj_fixed),
+      language = fct_reorder(level, estimate)
+    )
+  return(combined)
+}
+
+run_mod <- function(term) {
+  x <- reformulate("Tone*musicLessons + age + gender + (1|country) + (1|language)", response = term)
+  mod <- lmer(x, miq_combined_filtered)
+  output <- extract_language_estimates(mod)
+  return(output)
+}
+
+mods_old$languages <- map_miq(~ run_mod(.x))
+
+mods_old$languages$stats$mdt <- mods_old$languages$mdt |> 
+  filter(Tone == "Tonal") |> 
+  mutate(sig = ifelse(conf.low > 0, 1, 0)) |> 
+  summarise(
+    sig = sum(sig),
+    n = n()
+  )
+
+mods_old$languages$stats$cabat <- mods_old$languages$cabat |> 
+  filter(Tone == "Tonal") |> 
+  mutate(sig = ifelse(conf.high < 0, 1, 0)) |> 
+  summarise(
+    sig = sum(sig),
+    n = n()
+  )
+
+
+lang_counts <- miq_combined_filtered |> count(language)
+
+lang_plotter2 <- function(data, x_lab, y_lab = NULL) {
+  ggplot(data, aes(x = estimate, y = language, xmin = conf.low, xmax = conf.high, colour = Tone)) +
+    geom_vline(xintercept = 0, lty = "dashed", colour = "grey50") + 
+    geom_point(size = 2) +
+    geom_errorbar(size = 1) +
+    scale_colour_manual(values = c("#85C0F9", "#A95AA1", "#F5793A"),
+                        labels = c("Non-tonal","Pitch-accented", "Tonal"),
+                        name = "Language type") +
+    lims(x = c(-0.9,0.9)) +
+    labs(
+      x = NULL,
+      y = NULL, 
+      title = x_lab
+    ) +
+    geom_text(aes(label = lang_label, x = conf.high + 0.1), colour = "black", hjust = 0, size = 6) +
+    theme_minimal() +
+    guides(colour = guide_legend(override.aes = list(size=10))) +
+    coord_cartesian(clip = "off") +
+    theme(axis.text.y= element_blank(),
+          axis.title = element_text(size = 30),
+          axis.ticks.y = element_blank(),
+          axis.text.x = element_text(size = 16),
+          legend.text = element_text(size = 22),
+          legend.title = element_text(size = 24, hjust = 0.5),
+          panel.grid = element_blank(),
+          plot.title = element_text(hjust = 0.5, size = 24),
+    ) 
+}
+
+format_language_label <- function(data, add_count = FALSE) {
+  data <- data |> 
+    mutate(level_clean = case_when(
+      level == "Chinese/Mandarin" ~ "Mandarin",
+      level == "Chinese/Cantonese/Yue" ~ "Cantonese",
+      level == "Chinese/Other languages" ~ "Other Chinese languages",
+      level == "Chinese/Taiwanese/Min Nan/Hokkien" ~ "Hokkien",
+      TRUE ~ level
+    ))
+  
+  if (add_count) {
+    output <- data |>
+    left_join(lang_counts, by = c("level" = "language")) |>
+    mutate(n = as.integer(n)) |>
+    mutate(lang_label = paste0(level_clean, " (", str_trim(format(n, big.mark = ",")), ")"))
+  } else {
+    output <- data |> 
+      mutate(lang_label = level_clean)
+  }
+  return(output)
+}
+
+p1 <- lang_plotter2(format_language_label(mods_old$languages$mdt, TRUE), "Melodic Discrimination")
+p2 <- lang_plotter2(format_language_label(mods_old$languages$mpt, TRUE), "Mistuning Perception")
+p3 <- lang_plotter2(format_language_label(mods_old$languages$cabat, TRUE), "Beat Alignment")
+
+p1+p2+p3 +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "right")
+
+ggsave(here("viz", "correction_figures", "original_fig4.png"), width = 20, height = 14)
+
+```
+
+```{r corrected-version, fig.width = 21.2, fig.height = 15}
+#| fig.cap = "Fixing the intercept error."
+
+map_miq <- partial(map, .x = c("mdt", "mpt", "cabat") %>% set_names)
+
+mods_new <- list()
+
+extract_language_estimates <- function(mod_x) {
+  fixed <- mod_x %>% tidy() %>% 
+    filter(effect == "fixed",
+           term %in% c("ToneNon-tonal", "TonePitch-accented", "ToneTonal")) %>% 
+    select(term, fixed_effect = estimate) %>%
+    mutate(Tone = c("Non-tonal", "Pitch-accented", "Tonal"))
+  
+  # this adjusts the fixed-effect estimates so that non-tonal is a reference of 0
+  fixed <- fixed %>%
+    mutate(adj_fixed = fixed_effect - fixed %>% filter(Tone == "Non-tonal") %>% pull(fixed_effect))
+  
+  random <- tidy(mod_x, effects = "ran_vals", conf.int = TRUE, conf.level = 0.95) %>%
+    filter(group == "language") %>%
+    left_join(., languages %>% select(language, Tone), by = c("level" = "language")) %>%
+    mutate(Tone = ifelse(is.na(Tone), "Tonal", Tone))
+  
+  combined <- left_join(random, fixed %>% select(-term), by = "Tone") %>%
+    mutate(
+      across(c(estimate, conf.low, conf.high), ~ .x + adj_fixed),
+      language = fct_reorder(level, estimate)
+    )
+  return(combined)
+}
+
+run_mod <- function(term) {
+  x <- reformulate("0 + Tone*musicLessons + age + gender + (1|country) + (1|language)", response = term)
+  mod <- lmer(x, miq_combined_filtered)
+  output <- extract_language_estimates(mod)
+  return(output)
+}
+
+mods_new$languages <- map_miq(~ run_mod(.x))
+
+mods_new$languages$stats$mdt <- mods_new$languages$mdt |> 
+  filter(Tone == "Tonal") |> 
+  mutate(sig = ifelse(conf.low > 0, 1, 0)) |> 
+  summarise(
+    sig = sum(sig),
+    n = n()
+  )
+
+mods_new$languages$stats$cabat <- mods_new$languages$cabat |> 
+  filter(Tone == "Tonal") |> 
+  mutate(sig = ifelse(conf.high < 0, 1, 0)) |> 
+  summarise(
+    sig = sum(sig),
+    n = n()
+  )
+
+
+p1 <- lang_plotter2(format_language_label(mods_new$languages$mdt, TRUE), "Melodic Discrimination")
+p2 <- lang_plotter2(format_language_label(mods_new$languages$mpt, TRUE), "Mistuning Perception")
+p3 <- lang_plotter2(format_language_label(mods_new$languages$cabat, TRUE), "Beat Alignment")
+
+p1+p2+p3 +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "right")
+
+ggsave(here("viz", "correction_figures", "corrected_fig4.png"), width = 20, height = 14)
+
+```
+
